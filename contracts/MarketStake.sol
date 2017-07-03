@@ -124,13 +124,19 @@ contract MarketStake {
             (session.clientReading < session.providerReading && 
             session.providerReading - session.clientReading <= market.tolerance))) {
             
+            uint256 cost;
             
-            uint256 avgReading = session.clientReading/2 + session.providerReading/2 + ((session.clientReading & 1) & (session.providerReading & 1));
-                                    
-            uint256 cost = avgReading*market.price;
-            
-            if (market.stakeRate*cost > session.stake) {
-                cost = session.stake/market.stakeRate;
+            if (market.tagged) {
+                uint256 avgReading = session.clientReading/2 + session.providerReading/2 + 
+                                    ((session.clientReading & 1) & (session.providerReading & 1));
+                
+                cost = avgReading*market.price;
+                
+                if (market.stakeRate*cost > session.stake) {
+                    cost = session.stake/market.stakeRate;
+                }
+            } else {
+                cost = market.price;
             }
                 
             pending[market.provider] += session.stake + cost;
