@@ -29,8 +29,14 @@ contract MarketStake {
 	}
 	
 	mapping(address => uint) public pending;
-	mapping(bytes32 => Market) public markets; //Markets are never deleted, only deactivated.
+	mapping(bytes32 => Market) public markets;
 	mapping(bytes32 => Session) public sessions;
+	
+	/* Markets are never deleted, only deactivated, as sessions depend on markets.
+	 * Having sessions maintain a copy of the market would make market-wide
+	 * decisions expensive to implement such as market transfers
+	 * as each copy has to be updated separately.
+	 */
 	
 	uint256 session_nonce = 0;
 	uint256 market_nonce = 0;
