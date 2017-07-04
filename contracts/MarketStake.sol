@@ -87,6 +87,7 @@ contract MarketStake {
      * @param stakeRate The relative minimum stake needed, in Wei.
      * Discrete product has minimum stake relative to price.
      * Continuous service has minimum stake relative to 1.
+	 * Must be at least 2.
      * @param tolerance The maximum distance in [smallest measurable unit]
      * that two parties' readings can deviate from each other.
      * Must be zero for discrete products.
