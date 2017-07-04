@@ -126,7 +126,7 @@ contract MarketStake {
             
             uint256 cost;
             
-            if (market.tagged) {
+            if (!market.tagged) {
                 uint256 avgReading = session.clientReading/2 + session.providerReading/2 + 
                                     ((session.clientReading & 1) & (session.providerReading & 1));
                 
