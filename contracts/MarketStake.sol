@@ -198,7 +198,7 @@ contract MarketStake {
             return;
         } 
         
-        uint256 cost = session.stake/market.stakeRate;
+        uint256 cost = market.tagged ? market.price : session.stake/market.stakeRate;
         
         if (!market.active) {
             //Effective breach of contract by provider
