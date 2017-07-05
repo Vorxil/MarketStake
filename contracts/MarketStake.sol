@@ -128,6 +128,7 @@ contract MarketStake {
     function shutdownMarket(bytes32 market_id) 
     marketExists(market_id) 
     onlyProvider(market_id)
+	isActiveMarket(market_id)
     {
         markets[market_id].active = false;
         marketShutdown(market_id);
