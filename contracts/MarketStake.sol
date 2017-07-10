@@ -28,6 +28,9 @@ contract MarketStake {
         bool clientGiven;
         bool providerGiven;
         
+        bool clientBiCancel;
+        bool providerBiCancel;
+        
         bool active;
         bool exists;
     }
@@ -42,8 +45,8 @@ contract MarketStake {
      * as each copy has to be updated separately.
      */
     
-    uint256 session_nonce = 0;
-    uint256 market_nonce = 0;
+    uint256 private session_nonce = 0;
+    uint256 private market_nonce = 0;
     
     event newMarket(bytes32 market_id);
     event marketShutdown(bytes32 market_id);
@@ -100,7 +103,9 @@ contract MarketStake {
         uint8 stakeRate,
         uint256 tolerance,
         bool tagged
-    ) {
+    ) 
+    external 
+    {
         require(stakeRate > 1);
         require(!tagged || tolerance == 0);
         bytes32 market_id = keccak256(msg.sender, market_nonce++);
@@ -129,6 +134,7 @@ contract MarketStake {
     marketExists(market_id) 
     onlyProvider(market_id)
 	isActiveMarket(market_id)
+    external
     {
         markets[market_id].active = false;
         marketShutdown(market_id);
@@ -143,6 +149,7 @@ contract MarketStake {
     function transferMarket(bytes32 market_id, address newProvider)
     marketExists(market_id)
     onlyProvider(market_id)
+    external
     {
         markets[market_id].provider = newProvider;
         newMarketProvider(market_id);
@@ -157,6 +164,7 @@ contract MarketStake {
     function addStake(bytes32 market_id, uint256 stake)
     marketExists(market_id) 
     isActiveMarket(market_id) 
+    external
     {
         bytes32 session_id = keccak256(msg.sender, session_nonce++);
         
@@ -177,6 +185,8 @@ contract MarketStake {
             false,
             false,
             false,
+            false,
+            false,
             true
         );
         newStake(session_id);
@@ -188,7 +198,7 @@ contract MarketStake {
      * @param session_id The hash id of the session.
      * @return session_id via @event sessionStarted.
      */
-    function counterStake(bytes32 session_id) {
+    function counterStake(bytes32 session_id) external {
         Session memory session = sessions[session_id];
         Market memory market = markets[session.market_id];
         
@@ -216,7 +226,7 @@ contract MarketStake {
      * @return reading via @event sessionReading.
      * @return cost The final cost of the transaction, via @event sessionEnded.
      */
-    function completeSession(bytes32 session_id, uint256 reading) {
+    function completeSession(bytes32 session_id, uint256 reading) external {
         
         Session memory session = sessions[session_id];
         Market memory market = markets[session.market_id];
@@ -256,7 +266,7 @@ contract MarketStake {
      * @param session_id The hash of the session.
      * @return session_id via @event sessionCancelled.
      */
-    function cancel(bytes32 session_id) {
+    function cancel(bytes32 session_id) external {
         Session memory session = sessions[session_id];
         Market memory market = markets[session.market_id];
         
@@ -289,11 +299,44 @@ contract MarketStake {
         }
     }
     
+    
+    /**
+     * Bilaterally cancel the session. If both parties agree to cancel,
+     * the stakes are returned in full.
+     * @param session_id The hash ID of the session
+     * @return session_id via @event sessionCancelled
+     */
+    function bilateralCancel(bytes32 session_id) external {
+        Session memory session = sessions[session_id];
+        Market memory market = markets[session_id];
+        
+        require(session.exists);
+        require(market.exists);
+        require(session.client == msg.sender || market.provider == msg.sender);
+        require(market.active);
+        require(session.active);
+        
+        if (msg.sender == session.client && !session.clientBiCancel) {
+            (session.clientBiCancel, sessions[session_id].clientBiCancel) = (true, true);
+        }
+        
+        if (msg.sender == market.provider && !session.providerBiCancel) {
+            (session.providerBiCancel, sessions[session_id].providerBiCancel) = (true, true);
+        }
+        
+        if (session.clientBiCancel && session.providerBiCancel) {
+            pending[session.client] += session.stake;
+            pending[market.provider] += session.stake;
+            delete sessions[session_id];
+            sessionCancelled(session_id);
+        }
+    }
+    
     /**
      * Deposit a sum of Ether onto the contract.
      * Payable
      */
-    function deposit() payable {
+    function deposit() payable external {
         pending[msg.sender] += msg.value;
     }
     
@@ -301,7 +344,7 @@ contract MarketStake {
      * Withdraw deposit.
      * @return bool True if no error, throws otherwise.
      */
-    function withdraw() returns(bool){
+    function withdraw() external returns(bool){
         uint amount = pending[msg.sender];
         if (amount > 0) {
             pending[msg.sender] = 0;
