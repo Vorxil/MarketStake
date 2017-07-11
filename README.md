@@ -242,7 +242,7 @@ Requires the caller to be the client, provider or both.
 
 _session\_id_ is the session ID.
 
-@Event _sessionCancelld_ is fired if successful, containing the session ID.
+@Event _sessionCancelled_ is fired if successful, containing the session ID.
 
 
 
