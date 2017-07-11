@@ -39,6 +39,9 @@ struct Session {
     bool clientGiven;
     bool providerGiven;
 
+    bool clientBiCancel;
+    bool providerBiCancel;
+
     bool active;
     bool exists;
 }
