@@ -81,7 +81,7 @@ function addMarket(
     uint8 stakeRate,
     uint256 tolerance,
     bool tagged
-)
+) external
 ```
 Adds a new market. The provider sets the parameters for his market.
 
@@ -109,7 +109,7 @@ _tagged_ decides whether or not the market is selling discrete products or conti
 
 #### shutdownMarket
 ```javascript
-function shutdownMarket(bytes32 market_id)
+function shutdownMarket(bytes32 market_id) external
 ```
 Shuts down the market, permanently.
 
@@ -125,7 +125,7 @@ An alternative approach is to store a copy of the Market in the Session instance
 
 #### transferMarket
 ```javascript
-function transferMarket(bytes32 market_id, address newProvider)
+function transferMarket(bytes32 market_id, address newProvider) external
 ```
 Transfer ownership of the market to a new account. The new provider gets ownership rights and all future funds, including funds from all currently active sessions.
 
@@ -139,7 +139,7 @@ _newProvider_ is the new provider, to which the old provider wants to transfer t
 
 #### addStake
 ```javascript
-function addStake(bytes32 market_id, uint256 stake)
+function addStake(bytes32 market_id, uint256 stake) external
 ```
 Adds a stake on the market, setting up a new session.
 
@@ -157,7 +157,7 @@ _stake_ is the amount of Ether in Wei that the caller, here designated the clien
 
 #### counterStake
 ```javascript
-function counterStake(bytes32 session_id)
+function counterStake(bytes32 session_id) external
 ```
 Counters the client's stake with an equal stake, starting the session transaction.
 
@@ -175,7 +175,7 @@ _session\_id_ is the session ID.
 
 #### completeSession
 ```javascript
-function completeSession(bytes32 session_id, uint256 reading)
+function completeSession(bytes32 session_id, uint256 reading) external
 ```
 Send a reading to the session and complete the session transaction should the client and provider readings match within the tolerance of the market.
 
@@ -201,7 +201,7 @@ Providers, supply your services accordingly.
 
 #### cancel
 ```javascript
-function cancel(bytes32 session_id)
+function cancel(bytes32 session_id) external
 ```
 Unilaterally cancel the session transaction.
 
@@ -229,12 +229,26 @@ FLOOR(stake/stakeRate)
 for continuous services.
 
 #### bilateralCancel
+```javascript
+function bilateralCancel(bytes32 session_id) external
+```
+Agree to cancel the session bilaterally, returning the funds in full.
 
-Coming soon...
+Requires the market to exist and be active.
+
+Requires the session to exist and be active.
+
+Requires the caller to be the client, provider or both.
+
+_session\_id_ is the session ID.
+
+@Event _sessionCancelld_ is fired if successful, containing the session ID.
+
+
 
 #### deposit
 ```javascript
-function deposit() payable
+function deposit() payable external
 ```
 Deposit funds on the contract.
 
@@ -243,7 +257,7 @@ Funds are decided by _msg.value_.
 
 #### withdraw
 ```javascript
-function withdraw() returns(bool)
+function withdraw() returns(bool) external
 ```
 Withdraw deposited fund from contract.
 
