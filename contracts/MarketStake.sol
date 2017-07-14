@@ -173,7 +173,7 @@ contract MarketStake {
         require(!sessions[session_id].exists);
         require(pending[msg.sender] >= stake);
         require(stake >= market.minStake);
-        require(stake >= (market.tagged ? 1 : market.price)*market.stakeRate);
+        require(stake >= (market.tagged ? market.price : 1)*market.stakeRate);
         
         pending[msg.sender] -= stake;
         sessions[session_id] = Session(
