@@ -8,7 +8,7 @@ Read and understand source code before use.
 
 More details found in LICENSE.
 
-## Purpose
+## Description
 
 ### Introduction
 Using Ethereum for payment transactions is a traditional use-case. Over time, implementations have moved from low-level transactions, to tokens and payment channels, and mostly for digital assets. Adapting this to physical assets is desirable for cutting out the middle man of markets. To this endeavor, there are various ideas on how to bring it to fruition using the power of smart contracts on Ethereum.
@@ -59,9 +59,60 @@ The solution is to have Alice stake her money as well. How much is up to debate 
 
 However, Bob still controls the transaction completeness. And while this may not be so bad at first glance, consider the charging station. How much is Bob to be charged for charging his car? Cars are charged based on a rate. If Bob decides, then he can get free energy by saying he charged zero kWh. If Alice decides, then she can make Bob pay the maximum amount every time by inflating the amount charged.
 
-Clearly, both must agree on how much was charged. Thus both gets to decide on when a transaction is completed.
+Clearly, both must agree on how much was charged. Thus both get to decide on when a transaction is completed.
 
-Equal stakes with mutual agreement on transaction completeness, thus reducing risk of fraud. This is what MarketStake does.
+Equal stakes with mutual agreement on transaction completeness, thus incentivizing cooperation and reducing risk of fraud. This is what MarketStake does.
+
+### Potential
+
+MarketStake's potential lies in facilitating decentralized and, optionally automated, off-chain trade of goods and services. 
+
+Think of someone ordering from home. That order could be handled by small server in an automated warehouse, delivering the good by drone while having no interaction with the client besides the smart contract and encrypted delivery details.
+
+Think of charging your car with just about any outlet, all automated with just the necessary deposit.
+
+Selling goods and services over the world as if it was on the street with barely any interaction and no intermediaries.
+
+
+## Issues
+
+Rarely does an implementation lack issues, even less so for new technologies. As such, MarketStake will no doubt have a few quirks to iron out. Issues like currency fluctuation will, however, not be focused on, as it's outside the scope. Consumer protection laws et al. will also vary from country to country and there's nothing that can be done other than _code is law_ until stated otherwise. 
+
+### Relative value problem
+
+The idea behind MarketStake is to force two contractual parties to cooperate through economic incentive. Two economically rational parties, even if they don't trust each other, will still behave productively as they stand to gain their stakes back (after transaction fees and product/service price). In order for this to occur, the stake (which includes the price) must be greater than the price by some factor _k_ > 1. How large that factor needs to be is anyone's guess, but MarketStake accepts any integer _n_ > 1 and realistically needs to take transaction fees into account. Thus by not cooperating, the non-cooperator risks losing his whole stake, which is at least twice the price.
+
+What is not factored in, however, and is difficult to mitigate is that the penalty of non-cooperating can still be relatively small compared to the non-cooperator's funds and/or income. Such a non-cooperator could simply eat the losses. Raising the stakes means fewer can afford to do so, but fewer honest parties can also afford to lay stakes.
+
+An alternative approach is to implement a timer. However, if the stakes are returned at the end of the timer, then the client could simply receive the product and wait out the timer and get his money back. Alternatively, the provider can signal the contract the product has been delivered, thus the timer running out would transfer the price to the provider. However, this is also abusable as now the provider has no incentive to deliver what was promised, product or no. Both parties must agree that the product has arrived.
+
+Which brings us to another problem...
+
+### Dead non-cooperator
+
+If one of the parties were to "disappear", then the funds would stay locked in the contract forever. As a timer would again be abusable, it is uncertain what could be done about this. I don't expect large providers and clients to drop off the planet without someone coming to pick up the assets. The hope is that larger parties will have a reduced risk of dead non-cooperator and smaller parties won't induce too large costs.
+
+Until accounts are tied to national IDs alongside a trusted, external party that can verify the "state" of the account, there is little else that can be done.
+
+### Dispute resolution
+
+MarketStake is not a dispute resolver, it is merely the infrastructure for trustless off-chain transactions where the two parties don't even need to meet. The delivery address could be in the public, or a dead drop. If a dispute arises, all that MarketStake offers is unilateral and bilateral cancellation, the former having the cancelling party pay a cancellation fee and the latter returning the stakes in full.
+
+At the moment, any other form of dispute resolution is up to the client and provider.
+
+### Poisoned Apple Attack
+
+As with any unregulated market, there is a serious concern for poisoned goods i.e. goods where the act of getting a reading (e.g. sampling an apple before entering the token ID) is potentially dangerous to the party getting the reading. As governmental action cannot be counted on, there still exists a level of _caveat emptor_ to be considered.
+
+On its own, a poisoned apple attack is relatively expensive. However, if the provider's being paid by a third party to sell poisoned apples, the provider may not even care about getting the funds back from the contract.
+
+Thus the need for reputation still exists. But hopefully in a less significant manner.
+
+### Third-Party Collusion Attack
+
+A third-party collusion attack is where the client colludes with a third party unknown to the provider. This third party would try to steal the product while in transit and the client would try to convince the provider that the product never arrived. The provider would then either send a new product or bilaterally cancel. The third party would afterwards hand over the stolen good to the client, leaving the client with the product without having to pay for it.
+
+An on-chain solution is unknown to me. The best way to mitigate is to ensure the transport is secure and preferrably on a secret delivery path/schedule.
 
 ## Contract ABI
 

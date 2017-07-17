@@ -395,4 +395,10 @@ contract MarketStake {
         }
         return false;
     }
+	
+	/**
+	 * Fallback function
+	 * Throws to prevent accidental deposits.
+	 */
+	function() { revert(); }
 }
