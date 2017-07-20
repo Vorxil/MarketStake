@@ -22,6 +22,7 @@ contract MarketStake {
         address client;
         
         uint256 stake;
+        uint256 cancellationFee;
         
         uint256 providerReading;
         uint256 clientReading;
@@ -35,7 +36,16 @@ contract MarketStake {
         bool exists;
     }
     
-    mapping(address => uint) public pending;
+    mapping(address => uint) public supply;//Total supply of ether involved by user
+    mapping(address => uint) public balances;//Total amount of ether deposited by user
+    mapping(address => uint) public pending; //Withdrawable ether
+    /* Details:
+     * pending := withdrawable ether
+     * balances := pending + stakes
+     * supply := balances + cancellation fee reservations
+     * Invariant: pending <= balances <= supply
+     */
+    
     mapping(bytes32 => Market) public markets;
     mapping(bytes32 => Session) public sessions;
     
@@ -86,6 +96,7 @@ contract MarketStake {
      * @param price The price of the market item.
      * Discrete product's price measured in Wei.
      * Continuous service's price measured in Wei/[Smallest measurable unit].
+     * Price must be less than ((2^256)-1)/stakeRate
      * @param minStake The absolute minimum stake needed, in Wei.
      * @param stakeRate The relative minimum stake needed, in Wei.
      * Discrete product has minimum stake relative to price.
@@ -106,9 +117,18 @@ contract MarketStake {
     ) 
     external 
     {
-        require(stakeRate > 1);
-        require(!tagged || tolerance == 0);
-        bytes32 market_id = keccak256(msg.sender, market_nonce++);
+        require(invariant(msg.sender));
+        require(stakeRate > 1); //Incentive to force cooperation
+        require(!tagged || tolerance == 0); //Zero tolerance for discrete products
+        require(price <= uint256(-1)/stakeRate); //Overflow protection
+        
+        /* Generate market ID using the provider's address.
+         * Market nonce added to allow multiple markets per provider.
+         * Block number added so that provider doesn't get stuck in case
+         * of hash collision and thus doesn't have to wait for a new market;
+         * just wait for a new block i.e a few seconds.
+         */
+        bytes32 market_id = keccak256(msg.sender, block.number, market_nonce++);
         
         require(!markets[market_id].exists);
         markets[market_id] = Market(
@@ -122,6 +142,7 @@ contract MarketStake {
             true
         );
         newMarket(market_id);
+        require(invariant(msg.sender));
     }
     
     /**
@@ -136,8 +157,10 @@ contract MarketStake {
 	isActiveMarket(market_id)
     external
     {
+        require(invariant(msg.sender));
         markets[market_id].active = false;
         marketShutdown(market_id);
+        require(invariant(msg.sender));
     }
     
     /**
@@ -151,8 +174,39 @@ contract MarketStake {
     onlyProvider(market_id)
     external
     {
+        require(invariant(msg.sender));
+        require(invariant(newProvider));
+        
+        uint256 lockedStakesAndFees = supply[msg.sender] - pending[msg.sender];
+        uint256 lockedStakes = balances[msg.sender] - pending[msg.sender];
+        require(lockedStakesAndFees <= uint256(-1) - supply[newProvider]);//Overflow protection
+        
+        /* Details:
+         * The new provider must be able to accommodate the locked in stakes,
+         * as the stakes aren't refunded on transfers.
+         * Potential cancellation fees must also be accommodated.
+         */
+        
+        //Set new provider
         markets[market_id].provider = newProvider;
+        
+        //Update pending
+        //No update needed
+        
+        //Update balances
+        //Transfer locked stakes
+        balances[newProvider] += lockedStakes;
+        balances[msg.sender] -= lockedStakes;
+        
+        //Update supply
+        //Transfer locked stakes and fee reservations
+        supply[newProvider] += lockedStakesAndFees;
+        supply[msg.sender] -= lockedStakesAndFees;
+        
         newMarketProvider(market_id);
+        
+        require(invariant(msg.sender));
+        require(invariant(newProvider));
     }
     
     /**
@@ -166,7 +220,15 @@ contract MarketStake {
     isActiveMarket(market_id) 
     external
     {
-        bytes32 session_id = keccak256(msg.sender, session_nonce++);
+        require(invariant(msg.sender));
+        
+        /* Generate session ID using the client's address.
+         * Market nonce added to allow multiple sessions per cient.
+         * Block number added so that client doesn't get stuck in case
+         * of hash collision and thus doesn't have to wait for a new session;
+         * just wait for a new block i.e a few seconds.
+         */
+        bytes32 session_id = keccak256(msg.sender, block.number, session_nonce++);
         
         Market memory market = markets[market_id];
         
@@ -175,11 +237,27 @@ contract MarketStake {
         require(stake >= market.minStake);
         require(stake >= (market.tagged ? market.price : 1)*market.stakeRate);
         
+        uint256 fee = (market.tagged ? market.price : stake/market.stakeRate);
+        
+        require(fee <= uint256(-1) - supply[msg.sender]); //Overflow protection
+        
+        //Update pending
+        //Lock stake
         pending[msg.sender] -= stake;
+        
+        //Update balances
+        //Internal transfer, no update needed
+        
+        //Update supply
+        //Add fee reservation
+        supply[msg.sender] += fee;
+        
+        //Create session
         sessions[session_id] = Session(
             market_id, 
             msg.sender, 
             stake,
+            fee,
             0, 
             0, 
             false,
@@ -190,6 +268,8 @@ contract MarketStake {
             true
         );
         newStake(session_id);
+        
+        require(invariant(msg.sender));
     }
     
     /**
@@ -199,6 +279,9 @@ contract MarketStake {
      * @return session_id via @event sessionStarted.
      */
     function counterStake(bytes32 session_id) external {
+        
+        require(invariant(msg.sender));
+        
         Session memory session = sessions[session_id];
         Market memory market = markets[session.market_id];
         
@@ -209,10 +292,25 @@ contract MarketStake {
         require(!session.active);
         require(pending[market.provider] >= session.stake);
         
+        require(session.cancellationFee <= uint256(-1) - supply[market.provider]); //Overflow protection
+        
+        //Update pending
+        //Lock stake
         pending[market.provider] -= session.stake;
+        
+        //Update balances
+        //Internal transfer, no update needed
+        
+        //Update supply
+        //Add fee reservation
+        supply[market.provider] += session.cancellationFee;
+        
+        //Start session
         sessions[session_id].active = true;
         
         sessionStarted(session_id);
+        
+        require(invariant(msg.sender));
     }
     
     /**
@@ -227,6 +325,7 @@ contract MarketStake {
      * @return cost The final cost of the transaction, via @event sessionEnded.
      */
     function completeSession(bytes32 session_id, uint256 reading) external {
+        require(invariant(msg.sender));
         
         Session memory session = sessions[session_id];
         Market memory market = markets[session.market_id];
@@ -256,6 +355,7 @@ contract MarketStake {
                 sessionReading(session_id, reading);
             }
         }
+        require(invariant(msg.sender));
     }
     
     /**
@@ -267,8 +367,12 @@ contract MarketStake {
      * @return session_id via @event sessionCancelled.
      */
     function cancel(bytes32 session_id) external {
+        
         Session memory session = sessions[session_id];
         Market memory market = markets[session.market_id];
+        
+        require(invariant(session.client));
+        require(invariant(market.provider));
         
         require(session.exists);
         require(market.exists);
@@ -276,27 +380,71 @@ contract MarketStake {
         
         if (!session.active) {
             //No counter stake, just take money back
+            
+            //Update pending
+            //Return stake
             pending[session.client] += session.stake;
+            
+            //Update balacnes
+            //Internal transfer, no update needed
+            
+            //Update supply
+            //Remove fee reservation
+            supply[session.client] -= session.cancellationFee;
+            
+            //Delete session
             delete sessions[session_id];
             sessionCancelled(session_id);
+            
+            require(invariant(msg.sender));
             return;
         } 
         
-        uint256 cost = market.tagged ? market.price : session.stake/market.stakeRate;
-        
         if (!market.active) {
             //Effective breach of contract by provider
-            pending[session.client] += session.stake + cost;
-            pending[market.provider] += session.stake - cost;
+            
+            //Update pending
+            //Return stakes and transfer fees
+            pending[session.client] += session.stake + session.cancellationFee; 
+            pending[market.provider] += session.stake - session.cancellationFee;
+            
+            //Update balances
+            //Transfer fees
+            balances[session.client] += session.cancellationFee;
+            balances[market.provider] -= session.cancellationFee;
+            
+            //Update supply
+            //Remove fee reservation and tranfer fees
+            supply[market.provider] -= 2*session.cancellationFee;
+            //Client's cancel's out
+            
             delete sessions[session_id];
             sessionCancelled(session_id);
         } else {
             //Breach of contract by caller, caller pays fee equal to full price.
-            pending[msg.sender] += session.stake - cost;
-            pending[(msg.sender == market.provider) ? session.client : market.provider] += session.stake + cost;
+            address callee = (msg.sender == market.provider) ? session.client : market.provider;
+            
+            //Update pending
+            //Return stakes and transfer fees
+            pending[msg.sender] += session.stake - session.cancellationFee;
+            pending[callee] += session.stake + session.cancellationFee;
+            
+            //Update balances
+            //Transfer fees
+            balances[msg.sender] -= session.cancellationFee;
+            balances[callee] += session.cancellationFee;
+            
+            //Update supply
+            //Remove fee reservation and tranfer fees
+            supply[msg.sender] -= 2*session.cancellationFee;
+            //Callee's cancels out
+            
             delete sessions[session_id];
             sessionCancelled(session_id);
         }
+        
+        require(invariant(session.client));
+        require(invariant(market.provider));
     }
     
     
@@ -307,8 +455,12 @@ contract MarketStake {
      * @return session_id via @event sessionCancelled
      */
     function bilateralCancel(bytes32 session_id) external {
+        
         Session memory session = sessions[session_id];
         Market memory market = markets[session_id];
+        
+        require(invariant(session.client));
+        require(invariant(market.provider));
         
         require(session.exists);
         require(market.exists);
@@ -325,11 +477,24 @@ contract MarketStake {
         }
         
         if (session.clientBiCancel && session.providerBiCancel) {
+            //Update pending
+            //Return stakes
             pending[session.client] += session.stake;
             pending[market.provider] += session.stake;
+            
+            //Update balances
+            //Internal transfer, no update needed
+            
+            //Update supply
+            //Remove fee reservations
+            supply[session.client] -= session.cancellationFee;
+            supply[market.provider] -= session.cancellationFee;
             delete sessions[session_id];
             sessionCancelled(session_id);
         }
+        
+        require(invariant(session.client));
+        require(invariant(market.provider));
     }
     
     /**
@@ -337,7 +502,15 @@ contract MarketStake {
      * Payable
      */
     function deposit() payable external {
+        
+        require(invariant(msg.sender));
+        require(msg.value <= uint256(-1) - supply[msg.sender]);
+        
         pending[msg.sender] += msg.value;
+        balances[msg.sender] += msg.value;
+        supply[msg.sender] += msg.value;
+        
+        require(invariant(msg.sender));
     }
     
     /**
@@ -345,12 +518,18 @@ contract MarketStake {
      * @return bool True if no error, throws otherwise.
      */
     function withdraw() external returns(bool){
+        
+        require(invariant(msg.sender));
         uint amount = pending[msg.sender];
         if (amount > 0) {
             pending[msg.sender] = 0;
+            balances[msg.sender] -= amount;
+            supply[msg.sender] -= amount;
             msg.sender.transfer(amount);
         }
         return true;
+        
+        require(invariant(msg.sender));
     }
     
     /**
@@ -377,23 +556,45 @@ contract MarketStake {
                                     ((session.clientReading & 1) & (session.providerReading & 1));
                 
                 cost = avgReading*market.price;
+                uint256 correspondingStake = market.stakeRate*cost;
                 
-                if (market.stakeRate*cost > session.stake) {
+                //Check for overflows
+                if ((avgReading > 0 && market.price != cost/avgReading) || 
+                    (cost != correspondingStake/market.stakeRate) ||
+                    (correspondingStake > session.stake)) //If overflowed, then correspondingStake > session.stake
+                {
                     cost = session.stake/market.stakeRate;
                 }
             } else {
                 cost = market.price;
             }
-                
+            
+            //Update pending
+            //Return stakes and transfer cost
             pending[market.provider] += session.stake + cost;
             pending[session.client] += session.stake - cost;
+            
+            //Update balances
+            //Transfer cost
+            balances[market.provider] += cost;
+            balances[session.client] -= cost;
+            
+            //Update supply
+            //Remove fee reservations and transfer cost
+            supply[market.provider] -= session.cancellationFee - cost; //fee >= cost
+            supply[session.client] -= session.cancellationFee + cost;
                 
+            //Finish and delete session
             delete sessions[session_id];
             
             sessionEnded(session_id, cost);
             return true;
         }
         return false;
+    }
+    
+    function invariant(address toCheck) private constant returns (bool) {
+        return (pending[toCheck] <= balances[toCheck] && balances[toCheck] <= supply[toCheck]);
     }
 	
 	/**
