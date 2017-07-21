@@ -416,7 +416,7 @@ contract MarketStake {
             //Update supply
             //Remove fee reservation and tranfer fees
             supply[market.provider] -= 2*session.cancellationFee;
-            //Client's cancel's out
+            //Client's cancels out
             
             delete sessions[session_id];
             sessionCancelled(session_id);
@@ -526,10 +526,9 @@ contract MarketStake {
             balances[msg.sender] -= amount;
             supply[msg.sender] -= amount;
             msg.sender.transfer(amount);
-        }
-        return true;
-        
+        }  
         require(invariant(msg.sender));
+		return true;
     }
     
     /**
