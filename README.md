@@ -139,7 +139,8 @@ struct Session {
     address client;
 
     uint256 stake;
-
+    uint256 cancellationFee;
+    
     uint256 providerReading;
     uint256 clientReading;
     bool clientGiven;
@@ -153,10 +154,27 @@ struct Session {
 }
 ```
 
-#### pending
+#### Ether management
 ```javascript
+mapping(address => uint) public supply;
+mapping(address => uint) public balances;
 mapping(address => uint) public pending;
 ```
+_pending_ contains the amount of Wei that can be withdrawn by an address.
+
+_balances_ contains the total amount of Wei owned by an address on the contract, including locked stakes.
+
+_supply_ contains all the Wei associated with an address on the contract.
+
+"Free space" is defined as (2^256 - 1) - _supply_ and represents the total amount of extra Wei that the address can store.
+
+Invariant: 0 <= _pending_ <= _balances_ <= _supply_ < 2^256
+
+Notably, _supply_ contains the cancellation fee reservations. Ideally, the full price should be listed in the provider's supply as well. However, as fee and price are mutually exclusive and that final price <= fee, only the fee needs to be reserved.
+
+All of these serve to make the contract safe from (incredibly rare for 256-bits) integer overflow. The Safe Math library was considered, however, the throw-on-overflow nature was deemed a bit too restrictive and might allow the contract to reach such a state were funds are unrecoverable due to the multi-stage nature of MarketStake transactions.
+
+Safe Math might still be used in conjunction in the future, however.
 
 #### markets
 ```javascript
@@ -196,6 +214,8 @@ Adds a new market. The provider sets the parameters for his market.
 
 Requires an empty market ID slot.
 
+Requires that _price_ <= FLOOR((2^256 - 1)/_stakeRate_).
+
 _price_  is the price per unit of the market item. For discete products, this is measured in Wei. For continuous services, this is measured in the Wei/[smallest measurable unit].
 
 For example, the price of a car might be listed in Wei. A charging station might have a price listed in USD/kWh, but the contract, for the sake of precision, might list the price in Wei/J.
@@ -214,7 +234,7 @@ Note that a safety bound might be needed in case of hardware aging/failure.
 
 _tagged_ decides whether or not the market is selling discrete products or continuous services.
 
-@Event _newMarket_ is fired if successful, containing the market ID, a _keccak256_ hash of the caller's address and the market nonce.
+@Event _newMarket_ is fired if successful, containing the market ID, a _keccak256_ hash of the caller's address, the block number and the market nonce.
 
 #### shutdownMarket
 ```javascript
@@ -240,6 +260,8 @@ Transfer ownership of the market to a new account. The new provider gets ownersh
 
 Requires the caller to be the provider and for the market to exist.
 
+Requires the new provider to have enough "free space" to store all the locked stakes and reserved fees.
+
 _market\_id_ is the market ID.
 
 _newProvider_ is the new provider, to which the old provider wants to transfer the market.
@@ -256,13 +278,15 @@ Requires the market to exist and be active.
 
 Requires the caller to have enough deposited funds to support the stake.
 
+Requires the caller to have enough "free space" to store the reserved cancellation fee.
+
 Requires the stake to be larger than the relative and absolute minimum stakes.
 
 _market\_id_ is the market ID.
 
 _stake_ is the amount of Ether in Wei that the caller, here designated the client, wants to stake.
 
-@Event _newStake_ is fired if successful, containing the session ID, a _keccak256_ hash of the caller's address and the session nonce.
+@Event _newStake_ is fired if successful, containing the session ID, a _keccak256_ hash of the caller's address, the block number and the session nonce.
 
 #### counterStake
 ```javascript
@@ -277,6 +301,8 @@ Requires the market to exist and be active.
 Requires the session to exist and be inactive.
 
 Requires the provider to have enough deposited funds to cover the stake.
+
+Requires the provider to have enough "free space" to store the reserved cancellation fee.
 
 _session\_id_ is the session ID.
 
@@ -305,6 +331,7 @@ _reading_ is the sensor reading in [smallest measurable unit] or token ID (unitl
 ```
 MIN(FLOOR((clientReading + providerReading)/2)*price, FLOOR(stake/stakeRate))
 ```
+If the cost cannot be stored in 256-bits, then by definition, the max price FLOOR(stake/stakeRate) is used.
 
 Providers, supply your services accordingly.
 
@@ -359,6 +386,8 @@ _session\_id_ is the session ID.
 ```javascript
 function deposit() payable external
 ```
+Requires the depositor to have enough "free space" to store the funds.
+
 Deposit funds on the contract.
 
 Funds are decided by _msg.value_.
