@@ -36,11 +36,11 @@ contract MarketStake {
         bool exists;
     }
     
-    mapping(address => uint) public supply;//Total supply of ether involved by user
-    mapping(address => uint) public balances;//Total amount of ether deposited by user
-    mapping(address => uint) public pending; //Withdrawable ether
+    mapping(address => uint) public supply;//Total supply of wei involved by user
+    mapping(address => uint) public balances;//Total amount of wei deposited by user
+    mapping(address => uint) public pending; //Withdrawable wei
     /* Details:
-     * pending := withdrawable ether
+     * pending := withdrawable wei
      * balances := pending + stakes
      * supply := balances + cancellation fee reservations
      * Invariant: pending <= balances <= supply
@@ -96,7 +96,7 @@ contract MarketStake {
      * @param price The price of the market item.
      * Discrete product's price measured in Wei.
      * Continuous service's price measured in Wei/[Smallest measurable unit].
-     * Price must be less than ((2^256)-1)/stakeRate
+     * Price must be less than ((2^256)-1)/stakeRate wei.
      * @param minStake The absolute minimum stake needed, in Wei.
      * @param stakeRate The relative minimum stake needed, in Wei.
      * Discrete product has minimum stake relative to price.
@@ -167,6 +167,7 @@ contract MarketStake {
      * Transfers ownership and payment account of the market.
      * @param market_id The hash id of the market.
      * @param newProvider The new provider account.
+	 * Must have enough free space to hold all stakes and reservations.
      * @return market_id via @event newMarketProvider.
      */
     function transferMarket(bytes32 market_id, address newProvider)
@@ -211,6 +212,7 @@ contract MarketStake {
     
     /**
      * Adds a new stake by the client on an existing market.
+	 * Caller must have enough free space to store the reservation.
      * @param market_id The hash id of the market.
      * @param stake How much the client is willing to stake from contract deposit.
      * @return session_id The hash id of the session via @event newStake.
@@ -275,6 +277,7 @@ contract MarketStake {
     /**
      * Provider stakes an equivalent sum from provider's deposit
      * and starts the session.
+	 * Provider must have enough free space to store reservation.
      * @param session_id The hash id of the session.
      * @return session_id via @event sessionStarted.
      */
@@ -396,7 +399,8 @@ contract MarketStake {
             delete sessions[session_id];
             sessionCancelled(session_id);
             
-            require(invariant(msg.sender));
+            require(invariant(session.client));
+            require(invariant(market.provider));
             return;
         } 
         
@@ -414,7 +418,7 @@ contract MarketStake {
             balances[market.provider] -= session.cancellationFee;
             
             //Update supply
-            //Remove fee reservation and tranfer fees
+            //Remove fee reservation and transfer the fees
             supply[market.provider] -= 2*session.cancellationFee;
             //Client's cancels out
             
@@ -435,7 +439,7 @@ contract MarketStake {
             balances[callee] += session.cancellationFee;
             
             //Update supply
-            //Remove fee reservation and tranfer fees
+            //Remove fee reservation and transfer the fees
             supply[msg.sender] -= 2*session.cancellationFee;
             //Callee's cancels out
             
@@ -499,6 +503,7 @@ contract MarketStake {
     
     /**
      * Deposit a sum of Ether onto the contract.
+	 * Caller must have enough free space.
      * Payable
      */
     function deposit() payable external {
@@ -592,13 +597,16 @@ contract MarketStake {
         return false;
     }
     
+	/**
+	 * Invariant function
+	 */
     function invariant(address toCheck) private constant returns (bool) {
         return (pending[toCheck] <= balances[toCheck] && balances[toCheck] <= supply[toCheck]);
     }
 	
 	/**
 	 * Fallback function
-	 * Throws to prevent accidental deposits.
+	 * Throws to prevent accidental calls and deposits.
 	 */
 	function() { revert(); }
 }
