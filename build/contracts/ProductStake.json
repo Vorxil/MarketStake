@@ -1,0 +1,871 @@
+{
+  "contract_name": "ProductStake",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getPending",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getBalance",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "register",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "withdraw",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "ledger",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "reading",
+          "type": "uint256"
+        }
+      ],
+      "name": "completeOrder",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "cancelOrder",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "newMinimum",
+          "type": "uint256"
+        }
+      ],
+      "name": "changeMinStake",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "orderBook",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "confirm",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "bilateralCancelOrder",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "price",
+          "type": "uint256"
+        },
+        {
+          "name": "minStake",
+          "type": "uint256"
+        },
+        {
+          "name": "stakeRate",
+          "type": "uint256"
+        }
+      ],
+      "name": "addMarket",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "order",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "shutdownMarket",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "newRate",
+          "type": "uint256"
+        }
+      ],
+      "name": "changeStakeRate",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "deposit",
+      "outputs": [],
+      "payable": true,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "newPrice",
+          "type": "uint256"
+        }
+      ],
+      "name": "changePrice",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "isProduct",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "new_owner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address"
+        },
+        {
+          "name": "register",
+          "type": "address"
+        },
+        {
+          "name": "orderBook",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogNewMarket",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogMarketShutdown",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "oldPrice",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "newPrice",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogMarketPriceChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "oldMinimum",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "newMinimum",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogMarketMinStakeChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "oldRate",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "newRate",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogMarketStakeRateChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "marketID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "price",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "stake",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogNewOrder",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "confirmer",
+          "type": "address"
+        }
+      ],
+      "name": "LogOrderConfirmed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogOrderActivated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "reading",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogOrderNewReading",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "cost",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogOrderFilled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "canceller",
+          "type": "address"
+        }
+      ],
+      "name": "LogOrderCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "seeker",
+          "type": "address"
+        }
+      ],
+      "name": "LogOrderBilateralSought",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogOrderBilateralCancel",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "depositor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "deposit",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogDeposit",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "withdrawer",
+          "type": "address"
+        }
+      ],
+      "name": "LogWithdraw",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "LogTransferedOwnership",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x6060604052341561000f57600080fd5b60405160608061164f8339810160405280805191906020018051919060200180519150505b8282825b5b60008054600160a060020a03191633600160a060020a03161790555b60018054600160a060020a03808616600160a060020a0319928316179092556002805485841690831617905560038054928416929091169190911790555b5050505b5050505b6115a5806100aa6000396000f300606060405236156100f65763ffffffff60e060020a60003504166311ae9ed281146100fb57806312065fe0146101205780631aa3a008146101455780633ccfd60b1461017457806356397c35146101895780635c69d5d6146101b85780637489ec23146101d35780637727c9ad146101eb578063776af5ba14610206578063797af627146102355780638b0254b61461024d5780638da5cb5b14610265578063989140f414610294578063a67aa076146102b2578063c2299e33146102cd578063ce799b0a146102e5578063d0e30db014610300578063dabd2eb21461030a578063e0815f0d14610325578063f2fde38b1461034c575b600080fd5b341561010657600080fd5b61010e61036d565b60405190815260200160405180910390f35b341561012b57600080fd5b61010e6103fc565b60405190815260200160405180910390f35b341561015057600080fd5b61015861048b565b604051600160a060020a03909116815260200160405180910390f35b341561017f57600080fd5b61018761049a565b005b341561019457600080fd5b610158610552565b604051600160a060020a03909116815260200160405180910390f35b34156101c357600080fd5b610187600435602435610561565b005b34156101de57600080fd5b6101876004356106b8565b005b34156101f657600080fd5b61018760043560243561096b565b005b341561021157600080fd5b610158610ad1565b604051600160a060020a03909116815260200160405180910390f35b341561024057600080fd5b610187600435610ae0565b005b341561025857600080fd5b610187600435610c14565b005b341561027057600080fd5b610158610d5b565b604051600160a060020a03909116815260200160405180910390f35b341561029f57600080fd5b610187600435602435604435610d6a565b005b34156102bd57600080fd5b610187600435602435610e45565b005b34156102d857600080fd5b61018760043561107c565b005b34156102f057600080fd5b610187600435602435611131565b005b610187611297565b005b341561031557600080fd5b61018760043560243561135c565b005b341561033057600080fd5b6103386114c2565b604051901515815260200160405180910390f35b341561035757600080fd5b610187600160a060020a03600435166114c8565b005b60015460009073__LedgerLib_____________________________9063d086c25490600160a060020a0316836040516020015260405160e060020a63ffffffff8416028152600160a060020a03909116600482015260240160206040518083038186803b15156103dc57600080fd5b6102c65a03f415156103ed57600080fd5b50505060405180519150505b90565b60015460009073__LedgerLib_____________________________9063f8b2cb4f90600160a060020a0316836040516020015260405160e060020a63ffffffff8416028152600160a060020a03909116600482015260240160206040518083038186803b15156103dc57600080fd5b6102c65a03f415156103ed57600080fd5b50505060405180519150505b90565b600254600160a060020a031681565b60015473__LedgerLib_____________________________906351cff8d990600160a060020a031660405160e060020a63ffffffff8416028152600160a060020a03909116600482015260240160006040518083038186803b15156104fe57600080fd5b6102c65a03f4151561050f57600080fd5b5050507faf66eb1ff59a99165e990351acac53ab2fbc78bf79381392dd75b57ed2b8c40c33604051600160a060020a03909116815260200160405180910390a15b565b600154600160a060020a031681565b600354600254600154600092839273__OrderBookLib__________________________9263d4368a4492600160a060020a03908116928116911688886105a56114c2565b60006040516040015260405160e060020a63ffffffff8916028152600160a060020a03968716600482015294861660248601529290941660448401526064830152608482019290925290151560a482015260c401604080518083038186803b151561060f57600080fd5b6102c65a03f4151561062057600080fd5b50505060405180519060200180519193509091507fa4dfd3a534369eb77fd60f4f39e8cc4f687ffbd05d795a10ac460d23f1cb5b8b9050848460405191825260208201526040908101905180910390a180156106b1577ff02a19894e04d0c23885c6c4174f4071d19b66d3e8e8c0ed5318adeb9d0d94c6848360405191825260208201526040908101905180910390a15b5b50505050565b60035460025460015460009273__OrderBookLib__________________________92637230907c92600160a060020a03928316929182169116866106fa6114c2565b60405160e060020a63ffffffff8816028152600160a060020a03958616600482015293851660248501529190931660448301526064820192909252901515608482015260a40160006040518083038186803b151561075757600080fd5b6102c65a03f4151561076857600080fd5b505060035473__OrderBookLib__________________________9150637f555fe690600160a060020a03168460006040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b15156107de57600080fd5b6102c65a03f415156107ef57600080fd5b50505060405180516002549092507fc33d7d88eb78e97bc80ecde0d0ae0937fb0d6ba75fc859759df74126850741a39150839073__MarketLib_____________________________90637bad416390600160a060020a03168560006040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b151561089257600080fd5b6102c65a03f415156108a357600080fd5b505050604051805190506109445760025473__MarketLib_____________________________90634aa33c7990600160a060020a03168560006040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b151561092457600080fd5b6102c65a03f4151561093557600080fd5b50505060405180519050610946565b335b604051918252600160a060020a031660208201526040908101905180910390a15b5050565b60025460009073__MarketLib_____________________________90630f5edbda90600160a060020a031685846040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b15156109e057600080fd5b6102c65a03f415156109f157600080fd5b505050604051805160025490925073__MarketLib_____________________________915063777f942d90600160a060020a0316858560405160e060020a63ffffffff8616028152600160a060020a0390931660048401526024830191909152604482015260640160006040518083038186803b1515610a7057600080fd5b6102c65a03f41515610a8157600080fd5b5050507f044727f45ae00296311f60ef1094e6907c77f83fd6924721a4e63895fea25a3183828460405192835260208301919091526040808301919091526060909101905180910390a15b505050565b600354600160a060020a031681565b60035460025460015460009273__OrderBookLib__________________________9263c96232fa92600160a060020a0392831692918216911686866040516020015260405160e060020a63ffffffff8716028152600160a060020a039485166004820152928416602484015292166044820152606481019190915260840160206040518083038186803b1515610b7557600080fd5b6102c65a03f41515610b8657600080fd5b5050506040518051905090507f830fad7f1c8c04bdb87f62997fe061c6b3ce67a48b641138b9d33875598eaf908233604051918252600160a060020a031660208201526040908101905180910390a18015610967577f70b323bca51ba4f45496dadea8a49ab095de568c3d9a5ed8508e6c748f19d9cd8260405190815260200160405180910390a15b5b5050565b60035460025460015460009273__OrderBookLib__________________________9263cedde3d692600160a060020a0392831692918216911686610c566114c2565b60006040516020015260405160e060020a63ffffffff8816028152600160a060020a03958616600482015293851660248501529190931660448301526064820192909252901515608482015260a40160206040518083038186803b1515610cbc57600080fd5b6102c65a03f41515610ccd57600080fd5b5050506040518051905090507f5f64e50a4886882ac7a9d5f2ad55dbcf8ae7707edcdbde36fce9ea1560cf37958233604051918252600160a060020a031660208201526040908101905180910390a18015610967577fa8ca99833053ddb23703af294d764a66fc427075fef53cca19247a0cf949f95e8260405190815260200160405180910390a15b5b5050565b600054600160a060020a031681565b60025460009073__MarketLib_____________________________906350ba9e8c90600160a060020a0316868686866040516020015260405160e060020a63ffffffff8716028152600160a060020a03909416600485015260248401929092526044830152606482015260840160206040518083038186803b1515610dee57600080fd5b6102c65a03f41515610dff57600080fd5b5050506040518051905090507f789b6e9537af44db9b7f8507a4a0cc1a3e0977f5786b7e29af53799cb4952a138160405190815260200160405180910390a15b50505050565b60035460025460009173__OrderBookLib__________________________9163c584e01691600160a060020a0390811691168686610e816114c2565b60006040516020015260405160e060020a63ffffffff8816028152600160a060020a03958616600482015293909416602484015260448301919091526064820152901515608482015260a40160206040518083038186803b1515610ee457600080fd5b6102c65a03f41515610ef557600080fd5b50505060405180516003549092507f572736fa366e00283dbac942a50340270c4921434295714125251a2cef6d7ae491508490839073__OrderBookLib__________________________9063148d1a0990600160a060020a03168460006040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b1515610f9a57600080fd5b6102c65a03f41515610fab57600080fd5b5050506040518051600354909150869073__OrderBookLib__________________________90631a3419bd90600160a060020a03168a60006040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b151561102b57600080fd5b6102c65a03f4151561103c57600080fd5b5050506040518051905060405194855260208501939093526040808501929092526060840152608083019190915260a0909101905180910390a15b505050565b60025473__MarketLib_____________________________9063e134c9ff90600160a060020a03168360405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160006040518083038186803b15156110e657600080fd5b6102c65a03f415156110f757600080fd5b5050507fdbd6bf6a94f4e14e826e530c515a374d5b5fc9b0b3eb29c4c8a86059e5e4adc18160405190815260200160405180910390a15b50565b60025460009073__MarketLib_____________________________90630f5edbda90600160a060020a031685846040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b15156111a657600080fd5b6102c65a03f415156111b757600080fd5b505050604051805160025490925073__MarketLib_____________________________9150637def2fdf90600160a060020a0316858560405160e060020a63ffffffff8616028152600160a060020a0390931660048401526024830191909152604482015260640160006040518083038186803b151561123657600080fd5b6102c65a03f4151561124757600080fd5b5050507f4886bb8305357f706bbaf5c772af0445c74c290bba5908d2e7ee0eaa0cdaa05983828460405192835260208301919091526040808301919091526060909101905180910390a15b505050565b60015473__LedgerLib_____________________________906347e7ef2490600160a060020a03163460405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160006040518083038186803b151561130157600080fd5b6102c65a03f4151561131257600080fd5b5050507f1b851e1031ef35a238e6c67d0c7991162390df915f70eaf9098dbf0b175a61983334604051600160a060020a03909216825260208201526040908101905180910390a15b565b60025460009073__MarketLib_____________________________9063148d1a0990600160a060020a031685846040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b15156113d157600080fd5b6102c65a03f415156113e257600080fd5b505050604051805160025490925073__MarketLib_____________________________9150637d071f2e90600160a060020a0316858560405160e060020a63ffffffff8616028152600160a060020a0390931660048401526024830191909152604482015260640160006040518083038186803b151561146157600080fd5b6102c65a03f4151561147257600080fd5b5050507fa9e7fffd63989921e7c6d0faf20e988bf4b5b57669b2a168d3d912ed72e8f26f83828460405192835260208301919091526040808301919091526060909101905180910390a15b505050565b60015b90565b60005433600160a060020a039081169116146114e357600080fd5b600054600160a060020a03828116911614156114fe57600080fd5b600160a060020a038116151561151357600080fd5b60008054600160a060020a031916600160a060020a0383161790557fee47b81baf2909a9801c1f07ff2847af36985d612d4e53797db3baf2869867db3382604051600160a060020a039283168152911660208201526040908101905180910390a15b5b505600a165627a7a723058209135b4bd63e579c9b8d39e9bb524d212bb1ac534d764908d8a289868c673e2c30029",
+  "networks": {
+    "1501583417949": {
+      "events": {
+        "0x789b6e9537af44db9b7f8507a4a0cc1a3e0977f5786b7e29af53799cb4952a13": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "bytes32"
+            }
+          ],
+          "name": "LogNewMarket",
+          "type": "event"
+        },
+        "0xdbd6bf6a94f4e14e826e530c515a374d5b5fc9b0b3eb29c4c8a86059e5e4adc1": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "bytes32"
+            }
+          ],
+          "name": "LogMarketShutdown",
+          "type": "event"
+        },
+        "0xa9e7fffd63989921e7c6d0faf20e988bf4b5b57669b2a168d3d912ed72e8f26f": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "oldPrice",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "newPrice",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogMarketPriceChanged",
+          "type": "event"
+        },
+        "0x044727f45ae00296311f60ef1094e6907c77f83fd6924721a4e63895fea25a31": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "oldMinimum",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "newMinimum",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogMarketMinStakeChanged",
+          "type": "event"
+        },
+        "0x4886bb8305357f706bbaf5c772af0445c74c290bba5908d2e7ee0eaa0cdaa059": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "oldRate",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "newRate",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogMarketStakeRateChanged",
+          "type": "event"
+        },
+        "0x572736fa366e00283dbac942a50340270c4921434295714125251a2cef6d7ae4": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "marketID",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "orderID",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "price",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "stake",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogNewOrder",
+          "type": "event"
+        },
+        "0x830fad7f1c8c04bdb87f62997fe061c6b3ce67a48b641138b9d33875598eaf90": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "orderID",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "confirmer",
+              "type": "address"
+            }
+          ],
+          "name": "LogOrderConfirmed",
+          "type": "event"
+        },
+        "0x70b323bca51ba4f45496dadea8a49ab095de568c3d9a5ed8508e6c748f19d9cd": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "orderID",
+              "type": "bytes32"
+            }
+          ],
+          "name": "LogOrderActivated",
+          "type": "event"
+        },
+        "0xa4dfd3a534369eb77fd60f4f39e8cc4f687ffbd05d795a10ac460d23f1cb5b8b": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "orderID",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "reading",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogOrderNewReading",
+          "type": "event"
+        },
+        "0xf02a19894e04d0c23885c6c4174f4071d19b66d3e8e8c0ed5318adeb9d0d94c6": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "orderID",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "cost",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogOrderFilled",
+          "type": "event"
+        },
+        "0xc33d7d88eb78e97bc80ecde0d0ae0937fb0d6ba75fc859759df74126850741a3": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "orderID",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "canceller",
+              "type": "address"
+            }
+          ],
+          "name": "LogOrderCancelled",
+          "type": "event"
+        },
+        "0x5f64e50a4886882ac7a9d5f2ad55dbcf8ae7707edcdbde36fce9ea1560cf3795": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "orderID",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "seeker",
+              "type": "address"
+            }
+          ],
+          "name": "LogOrderBilateralSought",
+          "type": "event"
+        },
+        "0xa8ca99833053ddb23703af294d764a66fc427075fef53cca19247a0cf949f95e": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "orderID",
+              "type": "bytes32"
+            }
+          ],
+          "name": "LogOrderBilateralCancel",
+          "type": "event"
+        },
+        "0x1b851e1031ef35a238e6c67d0c7991162390df915f70eaf9098dbf0b175a6198": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "depositor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "deposit",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogDeposit",
+          "type": "event"
+        },
+        "0xaf66eb1ff59a99165e990351acac53ab2fbc78bf79381392dd75b57ed2b8c40c": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "withdrawer",
+              "type": "address"
+            }
+          ],
+          "name": "LogWithdraw",
+          "type": "event"
+        },
+        "0xee47b81baf2909a9801c1f07ff2847af36985d612d4e53797db3baf2869867db": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "to",
+              "type": "address"
+            }
+          ],
+          "name": "LogTransferedOwnership",
+          "type": "event"
+        }
+      },
+      "links": {
+        "LedgerLib": "0x154985d218888083897ed2586b931c16889fe104",
+        "MarketLib": "0xb41b4a7257f03992cb909e01a6e9bd677ec649e8",
+        "OrderBookLib": "0xad54478629affa16e580c903fb9d77ef3613d291"
+      },
+      "address": "0x0c9edc3ee0dab5d3ecd34522ca7d1d727691981b",
+      "updated_at": 1501585069931
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1501585069931
+}

@@ -1,0 +1,625 @@
+{
+  "contract_name": "ServiceStake",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getPending",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getBalance",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "register",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "withdraw",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "ledger",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "reading",
+          "type": "uint256"
+        }
+      ],
+      "name": "completeOrder",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "cancelOrder",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "newMinimum",
+          "type": "uint256"
+        }
+      ],
+      "name": "changeMinStake",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "orderBook",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "confirm",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "bilateralCancelOrder",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "price",
+          "type": "uint256"
+        },
+        {
+          "name": "minStake",
+          "type": "uint256"
+        },
+        {
+          "name": "stakeRate",
+          "type": "uint256"
+        },
+        {
+          "name": "tolerance",
+          "type": "uint256"
+        }
+      ],
+      "name": "addMarket",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "order",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "shutdownMarket",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "newRate",
+          "type": "uint256"
+        }
+      ],
+      "name": "changeStakeRate",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "deposit",
+      "outputs": [],
+      "payable": true,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "newPrice",
+          "type": "uint256"
+        }
+      ],
+      "name": "changePrice",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "isProduct",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "newTolerance",
+          "type": "uint256"
+        }
+      ],
+      "name": "changeTolernace",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "new_owner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address"
+        },
+        {
+          "name": "register",
+          "type": "address"
+        },
+        {
+          "name": "orderBook",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "oldTolerance",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "newTolerance",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogMarketToleranceChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogNewMarket",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogMarketShutdown",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "oldPrice",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "newPrice",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogMarketPriceChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "oldMinimum",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "newMinimum",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogMarketMinStakeChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "oldRate",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "newRate",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogMarketStakeRateChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "marketID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "price",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "stake",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogNewOrder",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "confirmer",
+          "type": "address"
+        }
+      ],
+      "name": "LogOrderConfirmed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogOrderActivated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "reading",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogOrderNewReading",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "cost",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogOrderFilled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "canceller",
+          "type": "address"
+        }
+      ],
+      "name": "LogOrderCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "seeker",
+          "type": "address"
+        }
+      ],
+      "name": "LogOrderBilateralSought",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "orderID",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogOrderBilateralCancel",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "depositor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "deposit",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogDeposit",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "withdrawer",
+          "type": "address"
+        }
+      ],
+      "name": "LogWithdraw",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "LogTransferedOwnership",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x6060604052341561000f57600080fd5b6040516060806117e78339810160405280805191906020018051919060200180519150505b8282825b5b60008054600160a060020a03191633600160a060020a03161790555b60018054600160a060020a03808616600160a060020a0319928316179092556002805485841690831617905560038054928416929091169190911790555b5050505b5050505b61173d806100aa6000396000f300606060405236156101015763ffffffff60e060020a60003504166311ae9ed2811461010657806312065fe01461012b5780631aa3a008146101505780633ccfd60b1461017f57806356397c35146101945780635c69d5d6146101c35780637489ec23146101de5780637727c9ad146101f6578063776af5ba14610211578063797af627146102405780638b0254b6146102585780638da5cb5b14610270578063941b01611461029f578063a67aa076146102c0578063c2299e33146102db578063ce799b0a146102f3578063d0e30db01461030e578063dabd2eb214610318578063e0815f0d14610333578063e49e039f1461035a578063f2fde38b14610375575b600080fd5b341561011157600080fd5b610119610396565b60405190815260200160405180910390f35b341561013657600080fd5b610119610425565b60405190815260200160405180910390f35b341561015b57600080fd5b6101636104b4565b604051600160a060020a03909116815260200160405180910390f35b341561018a57600080fd5b6101926104c3565b005b341561019f57600080fd5b61016361057b565b604051600160a060020a03909116815260200160405180910390f35b34156101ce57600080fd5b61019260043560243561058a565b005b34156101e957600080fd5b6101926004356106e1565b005b341561020157600080fd5b610192600435602435610994565b005b341561021c57600080fd5b610163610afa565b604051600160a060020a03909116815260200160405180910390f35b341561024b57600080fd5b610192600435610b09565b005b341561026357600080fd5b610192600435610c3d565b005b341561027b57600080fd5b610163610d84565b604051600160a060020a03909116815260200160405180910390f35b34156102aa57600080fd5b610192600435602435604435606435610d93565b005b34156102cb57600080fd5b610192600435602435610e78565b005b34156102e657600080fd5b6101926004356110af565b005b34156102fe57600080fd5b610192600435602435611164565b005b6101926112ca565b005b341561032357600080fd5b61019260043560243561138f565b005b341561033e57600080fd5b6103466114f5565b604051901515815260200160405180910390f35b341561036557600080fd5b6101926004356024356114fb565b005b341561038057600080fd5b610192600160a060020a0360043516611660565b005b60015460009073__LedgerLib_____________________________9063d086c25490600160a060020a0316836040516020015260405160e060020a63ffffffff8416028152600160a060020a03909116600482015260240160206040518083038186803b151561040557600080fd5b6102c65a03f4151561041657600080fd5b50505060405180519150505b90565b60015460009073__LedgerLib_____________________________9063f8b2cb4f90600160a060020a0316836040516020015260405160e060020a63ffffffff8416028152600160a060020a03909116600482015260240160206040518083038186803b151561040557600080fd5b6102c65a03f4151561041657600080fd5b50505060405180519150505b90565b600254600160a060020a031681565b60015473__LedgerLib_____________________________906351cff8d990600160a060020a031660405160e060020a63ffffffff8416028152600160a060020a03909116600482015260240160006040518083038186803b151561052757600080fd5b6102c65a03f4151561053857600080fd5b5050507faf66eb1ff59a99165e990351acac53ab2fbc78bf79381392dd75b57ed2b8c40c33604051600160a060020a03909116815260200160405180910390a15b565b600154600160a060020a031681565b600354600254600154600092839273__OrderBookLib__________________________9263d4368a4492600160a060020a03908116928116911688886105ce6114f5565b60006040516040015260405160e060020a63ffffffff8916028152600160a060020a03968716600482015294861660248601529290941660448401526064830152608482019290925290151560a482015260c401604080518083038186803b151561063857600080fd5b6102c65a03f4151561064957600080fd5b50505060405180519060200180519193509091507fa4dfd3a534369eb77fd60f4f39e8cc4f687ffbd05d795a10ac460d23f1cb5b8b9050848460405191825260208201526040908101905180910390a180156106da577ff02a19894e04d0c23885c6c4174f4071d19b66d3e8e8c0ed5318adeb9d0d94c6848360405191825260208201526040908101905180910390a15b5b50505050565b60035460025460015460009273__OrderBookLib__________________________92637230907c92600160a060020a03928316929182169116866107236114f5565b60405160e060020a63ffffffff8816028152600160a060020a03958616600482015293851660248501529190931660448301526064820192909252901515608482015260a40160006040518083038186803b151561078057600080fd5b6102c65a03f4151561079157600080fd5b505060035473__OrderBookLib__________________________9150637f555fe690600160a060020a03168460006040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b151561080757600080fd5b6102c65a03f4151561081857600080fd5b50505060405180516002549092507fc33d7d88eb78e97bc80ecde0d0ae0937fb0d6ba75fc859759df74126850741a39150839073__MarketLib_____________________________90637bad416390600160a060020a03168560006040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b15156108bb57600080fd5b6102c65a03f415156108cc57600080fd5b5050506040518051905061096d5760025473__MarketLib_____________________________90634aa33c7990600160a060020a03168560006040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b151561094d57600080fd5b6102c65a03f4151561095e57600080fd5b5050506040518051905061096f565b335b604051918252600160a060020a031660208201526040908101905180910390a15b5050565b60025460009073__MarketLib_____________________________90630f5edbda90600160a060020a031685846040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b1515610a0957600080fd5b6102c65a03f41515610a1a57600080fd5b505050604051805160025490925073__MarketLib_____________________________915063777f942d90600160a060020a0316858560405160e060020a63ffffffff8616028152600160a060020a0390931660048401526024830191909152604482015260640160006040518083038186803b1515610a9957600080fd5b6102c65a03f41515610aaa57600080fd5b5050507f044727f45ae00296311f60ef1094e6907c77f83fd6924721a4e63895fea25a3183828460405192835260208301919091526040808301919091526060909101905180910390a15b505050565b600354600160a060020a031681565b60035460025460015460009273__OrderBookLib__________________________9263c96232fa92600160a060020a0392831692918216911686866040516020015260405160e060020a63ffffffff8716028152600160a060020a039485166004820152928416602484015292166044820152606481019190915260840160206040518083038186803b1515610b9e57600080fd5b6102c65a03f41515610baf57600080fd5b5050506040518051905090507f830fad7f1c8c04bdb87f62997fe061c6b3ce67a48b641138b9d33875598eaf908233604051918252600160a060020a031660208201526040908101905180910390a18015610990577f70b323bca51ba4f45496dadea8a49ab095de568c3d9a5ed8508e6c748f19d9cd8260405190815260200160405180910390a15b5b5050565b60035460025460015460009273__OrderBookLib__________________________9263cedde3d692600160a060020a0392831692918216911686610c7f6114f5565b60006040516020015260405160e060020a63ffffffff8816028152600160a060020a03958616600482015293851660248501529190931660448301526064820192909252901515608482015260a40160206040518083038186803b1515610ce557600080fd5b6102c65a03f41515610cf657600080fd5b5050506040518051905090507f5f64e50a4886882ac7a9d5f2ad55dbcf8ae7707edcdbde36fce9ea1560cf37958233604051918252600160a060020a031660208201526040908101905180910390a18015610990577fa8ca99833053ddb23703af294d764a66fc427075fef53cca19247a0cf949f95e8260405190815260200160405180910390a15b5b5050565b600054600160a060020a031681565b60025460009073__MarketLib_____________________________9063580fd0fd90600160a060020a031687878787876040516020015260405160e060020a63ffffffff8816028152600160a060020a039095166004860152602485019390935260448401919091526064830152608482015260a40160206040518083038186803b1515610e2057600080fd5b6102c65a03f41515610e3157600080fd5b5050506040518051905090507f789b6e9537af44db9b7f8507a4a0cc1a3e0977f5786b7e29af53799cb4952a138160405190815260200160405180910390a15b5050505050565b60035460025460009173__OrderBookLib__________________________9163c584e01691600160a060020a0390811691168686610eb46114f5565b60006040516020015260405160e060020a63ffffffff8816028152600160a060020a03958616600482015293909416602484015260448301919091526064820152901515608482015260a40160206040518083038186803b1515610f1757600080fd5b6102c65a03f41515610f2857600080fd5b50505060405180516003549092507f572736fa366e00283dbac942a50340270c4921434295714125251a2cef6d7ae491508490839073__OrderBookLib__________________________9063148d1a0990600160a060020a03168460006040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b1515610fcd57600080fd5b6102c65a03f41515610fde57600080fd5b5050506040518051600354909150869073__OrderBookLib__________________________90631a3419bd90600160a060020a03168a60006040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b151561105e57600080fd5b6102c65a03f4151561106f57600080fd5b5050506040518051905060405194855260208501939093526040808501929092526060840152608083019190915260a0909101905180910390a15b505050565b60025473__MarketLib_____________________________9063e134c9ff90600160a060020a03168360405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160006040518083038186803b151561111957600080fd5b6102c65a03f4151561112a57600080fd5b5050507fdbd6bf6a94f4e14e826e530c515a374d5b5fc9b0b3eb29c4c8a86059e5e4adc18160405190815260200160405180910390a15b50565b60025460009073__MarketLib_____________________________90630f5edbda90600160a060020a031685846040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b15156111d957600080fd5b6102c65a03f415156111ea57600080fd5b505050604051805160025490925073__MarketLib_____________________________9150637def2fdf90600160a060020a0316858560405160e060020a63ffffffff8616028152600160a060020a0390931660048401526024830191909152604482015260640160006040518083038186803b151561126957600080fd5b6102c65a03f4151561127a57600080fd5b5050507f4886bb8305357f706bbaf5c772af0445c74c290bba5908d2e7ee0eaa0cdaa05983828460405192835260208301919091526040808301919091526060909101905180910390a15b505050565b60015473__LedgerLib_____________________________906347e7ef2490600160a060020a03163460405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160006040518083038186803b151561133457600080fd5b6102c65a03f4151561134557600080fd5b5050507f1b851e1031ef35a238e6c67d0c7991162390df915f70eaf9098dbf0b175a61983334604051600160a060020a03909216825260208201526040908101905180910390a15b565b60025460009073__MarketLib_____________________________9063148d1a0990600160a060020a031685846040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b151561140457600080fd5b6102c65a03f4151561141557600080fd5b505050604051805160025490925073__MarketLib_____________________________91506342f68b1c90600160a060020a0316858560405160e060020a63ffffffff8616028152600160a060020a0390931660048401526024830191909152604482015260640160006040518083038186803b151561149457600080fd5b6102c65a03f415156114a557600080fd5b5050507fa9e7fffd63989921e7c6d0faf20e988bf4b5b57669b2a168d3d912ed72e8f26f83828460405192835260208301919091526040808301919091526060909101905180910390a15b505050565b60005b90565b60025460009073__MarketLib_____________________________9062762aaf90600160a060020a031685846040516020015260405160e060020a63ffffffff8516028152600160a060020a039092166004830152602482015260440160206040518083038186803b151561156f57600080fd5b6102c65a03f4151561158057600080fd5b505050604051805160025490925073__MarketLib_____________________________91506327634ee190600160a060020a0316858560405160e060020a63ffffffff8616028152600160a060020a0390931660048401526024830191909152604482015260640160006040518083038186803b15156115ff57600080fd5b6102c65a03f4151561161057600080fd5b5050507f9df0b176da3ea57a44f33106c08364a278c528e01cbd97537bb3ca8c4eb7b03f83828460405192835260208301919091526040808301919091526060909101905180910390a15b505050565b60005433600160a060020a0390811691161461167b57600080fd5b600054600160a060020a038281169116141561169657600080fd5b600160a060020a03811615156116ab57600080fd5b60008054600160a060020a031916600160a060020a0383161790557fee47b81baf2909a9801c1f07ff2847af36985d612d4e53797db3baf2869867db3382604051600160a060020a039283168152911660208201526040908101905180910390a15b5b505600a165627a7a72305820dac00c92b4ba32c92f2142b0e2c21df4d2505d82f0a9e2c01235dce562c2a5110029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1501581306492
+}

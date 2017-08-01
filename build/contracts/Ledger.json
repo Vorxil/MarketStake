@@ -1,0 +1,291 @@
+{
+  "contract_name": "Ledger",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "freeSpaceOf",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "removeLocked",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "pending",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "supplyOf",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "removePending",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "addPending",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "addGains",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "locked",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "removeGains",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "addLocked",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "gains",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "new_owner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "payable": false,
+      "type": "fallback"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "LogTransferedOwnership",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x60606040525b60008054600160a060020a03191633600160a060020a03161790555b5b610851806100316000396000f300606060405236156100b45763ffffffff60e060020a60003504166324f743dc81146100cc5780635dc1bb52146100fd5780635eebea201461012157806362400e4c1461015257806370a08231146101835780638da5cb5b146101b45780639c544e72146101e3578063a279c48814610207578063ba2aee261461022b578063cbf9fe5f1461024f578063d9f7eacf14610280578063e73886b0146102a4578063eca07939146102c8578063f2fde38b146102f9575b34156100bf57600080fd5b6100ca5b600080fd5b565b005b34156100d757600080fd5b6100eb600160a060020a036004351661031a565b60405190815260200160405180910390f35b341561010857600080fd5b6100ca600160a060020a0360043516602435610331565b005b341561012c57600080fd5b6100eb600160a060020a03600435166103c9565b60405190815260200160405180910390f35b341561015d57600080fd5b6100eb600160a060020a03600435166103db565b60405190815260200160405180910390f35b341561018e57600080fd5b6100eb600160a060020a036004351661040f565b60405190815260200160405180910390f35b34156101bf57600080fd5b6101c761043b565b604051600160a060020a03909116815260200160405180910390f35b34156101ee57600080fd5b6100ca600160a060020a036004351660243561044a565b005b341561021257600080fd5b6100ca600160a060020a03600435166024356104e2565b005b341561023657600080fd5b6100ca600160a060020a0360043516602435610566565b005b341561025a57600080fd5b6100eb600160a060020a03600435166105ea565b60405190815260200160405180910390f35b341561028b57600080fd5b6100ca600160a060020a03600435166024356105fc565b005b34156102af57600080fd5b6100ca600160a060020a0360043516602435610694565b005b34156102d357600080fd5b6100eb600160a060020a0360043516610718565b60405190815260200160405180910390f35b341561030457600080fd5b6100ca600160a060020a036004351661072a565b005b6000610325826103db565b6000190390505b919050565b60005433600160a060020a0390811691161461034c57600080fd5b81610356816107db565b151561036157600080fd5b600160a060020a038316600090815260026020526040902054839083908190101561038b57600080fd5b600160a060020a0385166000908152600260205260409020805485900390555b5b50506103b7816107db565b15156103c257600080fd5b5b505b5050565b60036020526000908152604090205481565b600160a060020a0381166000908152600360209081526040808320546002835281842054600190935292205401015b919050565b600160a060020a038116600090815260036020908152604080832054600290925290912054015b919050565b600054600160a060020a031681565b60005433600160a060020a0390811691161461046557600080fd5b8161046f816107db565b151561047a57600080fd5b600160a060020a03831660009081526003602052604090205483908390819010156104a457600080fd5b600160a060020a0385166000908152600360205260409020805485900390555b5b50506103b7816107db565b15156103c257600080fd5b5b505b5050565b60005433600160a060020a039081169116146104fd57600080fd5b81610507816107db565b151561051257600080fd5b82828061051e8361031a565b101561052957600080fd5b600160a060020a03851660009081526003602052604090208054850190555b5b50506103b7816107db565b15156103c257600080fd5b5b505b5050565b60005433600160a060020a0390811691161461058157600080fd5b8161058b816107db565b151561059657600080fd5b8282806105a28361031a565b10156105ad57600080fd5b600160a060020a03851660009081526001602052604090208054850190555b5b50506103b7816107db565b15156103c257600080fd5b5b505b5050565b60026020526000908152604090205481565b60005433600160a060020a0390811691161461061757600080fd5b81610621816107db565b151561062c57600080fd5b600160a060020a038316600090815260016020526040902054839083908190101561065657600080fd5b600160a060020a0385166000908152600160205260409020805485900390555b5b50506103b7816107db565b15156103c257600080fd5b5b505b5050565b60005433600160a060020a039081169116146106af57600080fd5b816106b9816107db565b15156106c457600080fd5b8282806106d08361031a565b10156106db57600080fd5b600160a060020a03851660009081526002602052604090208054850190555b5b50506103b7816107db565b15156103c257600080fd5b5b505b5050565b60016020526000908152604090205481565b60005433600160a060020a0390811691161461074557600080fd5b600054600160a060020a038281169116141561076057600080fd5b600160a060020a038116151561077557600080fd5b60008054600160a060020a031916600160a060020a0383161790557fee47b81baf2909a9801c1f07ff2847af36985d612d4e53797db3baf2869867db3382604051600160a060020a039283168152911660208201526040908101905180910390a15b5b50565b60006107e68261040f565b600160a060020a0383166000908152600360205260409020541180159061081d5750610811826103db565b61081a8361040f565b11155b90505b9190505600a165627a7a7230582000e324449790cb5b13341be3dfdf58dee81da011f243b93f509ece992b30d98c0029",
+  "networks": {
+    "1501583417949": {
+      "events": {
+        "0xee47b81baf2909a9801c1f07ff2847af36985d612d4e53797db3baf2869867db": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "to",
+              "type": "address"
+            }
+          ],
+          "name": "LogTransferedOwnership",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x2a3d488dcfae1455ab6ed8dbe3880f968b4371c5",
+      "updated_at": 1501585069924
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1501585069924
+}

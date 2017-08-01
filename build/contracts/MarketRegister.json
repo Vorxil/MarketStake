@@ -1,0 +1,322 @@
+{
+  "contract_name": "MarketRegister",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "stakeRate",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "setPrice",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "minStake",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "exists",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "value",
+          "type": "address"
+        }
+      ],
+      "name": "setProvider",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "setStakeRate",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "name": "setActive",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "provider",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "price",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "nonce",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "new_id",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "active",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMinStake",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "name": "setExists",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "new_owner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "payable": false,
+      "type": "fallback"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "LogTransferedOwnership",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x606060405260006002555b60008054600160a060020a03191633600160a060020a03161790555b5b610739806100366000396000f300606060405236156100ca5763ffffffff60e060020a6000350416630477f9f581146100e257806310d8d74d1461010a5780631ed087cf1461012557806338a699a41461014d5780634a7987a21461017757806360fdd1c91461019b5780636485d678146101b657806367b802a2146101d357806388f3543a146102055780638da5cb5b1461022d578063affed0e01461025c578063c5a665ea14610281578063e26e4cf9146102b2578063ed9f18fb146102dc578063efd7313d146102f7578063f2fde38b14610314575b34156100d557600080fd5b6100e05b600080fd5b565b005b34156100ed57600080fd5b6100f8600435610335565b60405190815260200160405180910390f35b341561011557600080fd5b6100e0600435602435610347565b005b341561013057600080fd5b6100f860043561039a565b60405190815260200160405180910390f35b341561015857600080fd5b6101636004356103ac565b604051901515815260200160405180910390f35b341561018257600080fd5b6100e0600435600160a060020a03602435166103c1565b005b34156101a657600080fd5b6100e0600435602435610442565b005b34156101c157600080fd5b6100e06004356024351515610495565b005b34156101de57600080fd5b6101e96004356104f1565b604051600160a060020a03909116815260200160405180910390f35b341561021057600080fd5b6100f860043561050c565b60405190815260200160405180910390f35b341561023857600080fd5b6101e961051e565b604051600160a060020a03909116815260200160405180910390f35b341561026757600080fd5b6100f861052d565b60405190815260200160405180910390f35b341561028c57600080fd5b6100f8600160a060020a0360043516610533565b60405190815260200160405180910390f35b34156102bd57600080fd5b6101636004356105b9565b604051901515815260200160405180910390f35b34156102e757600080fd5b6100e06004356024356105ce565b005b341561030257600080fd5b6100e06004356024351515610621565b005b341561031f57600080fd5b6100e0600160a060020a036004351661065c565b005b60076020526000908152604090205481565b60005433600160a060020a0390811691161461036257600080fd5b600082815260016020526040902054829060ff16151561038157600080fd5b60008381526005602052604090208290555b5b505b5050565b60066020526000908152604090205481565b60016020526000908152604090205460ff1681565b60005433600160a060020a039081169116146103dc57600080fd5b600082815260016020526040902054829060ff1615156103fb57600080fd5b81600160a060020a038116151561041157600080fd5b60008481526003602052604090208054600160a060020a031916600160a060020a0385161790555b5b505b505b5050565b60005433600160a060020a0390811691161461045d57600080fd5b600082815260016020526040902054829060ff16151561047c57600080fd5b60008381526007602052604090208290555b5b505b5050565b60005433600160a060020a039081169116146104b057600080fd5b600082815260016020526040902054829060ff1615156104cf57600080fd5b6000838152600460205260409020805460ff19168315151790555b5b505b5050565b600360205260009081526040902054600160a060020a031681565b60056020526000908152604090205481565b600054600160a060020a031681565b60025481565b6000805433600160a060020a0390811691161461054f57600080fd5b81600160a060020a038116151561056557600080fd5b6002805460018101909155309084904390604051606060020a600160a060020a039586168102825293909416909202601484015260288301526048820152606801604051809103902091505b5b505b919050565b60046020526000908152604090205460ff1681565b60005433600160a060020a039081169116146105e957600080fd5b600082815260016020526040902054829060ff16151561060857600080fd5b60008381526006602052604090208290555b5b505b5050565b60005433600160a060020a0390811691161461063c57600080fd5b6000828152600160205260409020805460ff19168215151790555b5b5050565b60005433600160a060020a0390811691161461067757600080fd5b600054600160a060020a038281169116141561069257600080fd5b600160a060020a03811615156106a757600080fd5b60008054600160a060020a031916600160a060020a0383161790557fee47b81baf2909a9801c1f07ff2847af36985d612d4e53797db3baf2869867db3382604051600160a060020a039283168152911660208201526040908101905180910390a15b5b505600a165627a7a723058200915de9d3b8e9fd3378fb1dd666c2afe44b3c18db46ad2cda4ca638a6653fa7b0029",
+  "networks": {
+    "1501583417949": {
+      "events": {
+        "0xee47b81baf2909a9801c1f07ff2847af36985d612d4e53797db3baf2869867db": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "to",
+              "type": "address"
+            }
+          ],
+          "name": "LogTransferedOwnership",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x8a2d1e682cad31e16cc339a835912a488cb85e3a",
+      "updated_at": 1501585069924
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1501585069924
+}

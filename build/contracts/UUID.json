@@ -1,0 +1,122 @@
+{
+  "contract_name": "UUID",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "exists",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "nonce",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "new_id",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "name": "setExists",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "new_owner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "payable": false,
+      "type": "fallback"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "LogTransferedOwnership",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x606060405260006002555b60008054600160a060020a03191633600160a060020a03161790555b5b610329806100366000396000f3006060604052361561005c5763ffffffff60e060020a60003504166338a699a481146100745780638da5cb5b1461009e578063affed0e0146100cd578063c5a665ea146100f2578063efd7313d14610123578063f2fde38b14610140575b341561006757600080fd5b6100725b600080fd5b565b005b341561007f57600080fd5b61008a600435610161565b604051901515815260200160405180910390f35b34156100a957600080fd5b6100b1610176565b604051600160a060020a03909116815260200160405180910390f35b34156100d857600080fd5b6100e0610185565b60405190815260200160405180910390f35b34156100fd57600080fd5b6100e0600160a060020a036004351661018b565b60405190815260200160405180910390f35b341561012e57600080fd5b6100726004356024351515610211565b005b341561014b57600080fd5b610072600160a060020a036004351661024c565b005b60016020526000908152604090205460ff1681565b600054600160a060020a031681565b60025481565b6000805433600160a060020a039081169116146101a757600080fd5b81600160a060020a03811615156101bd57600080fd5b6002805460018101909155309084904390604051606060020a600160a060020a039586168102825293909416909202601484015260288301526048820152606801604051809103902091505b5b505b919050565b60005433600160a060020a0390811691161461022c57600080fd5b6000828152600160205260409020805460ff19168215151790555b5b5050565b60005433600160a060020a0390811691161461026757600080fd5b600054600160a060020a038281169116141561028257600080fd5b600160a060020a038116151561029757600080fd5b60008054600160a060020a031916600160a060020a0383161790557fee47b81baf2909a9801c1f07ff2847af36985d612d4e53797db3baf2869867db3382604051600160a060020a039283168152911660208201526040908101905180910390a15b5b505600a165627a7a72305820afe4d540886cf4ac733b9f0e80d4ce45366dc777318c2c72bba2f54eaa8c2d2f0029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1501581306493
+}
