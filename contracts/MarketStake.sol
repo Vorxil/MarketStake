@@ -29,6 +29,7 @@ contract MarketStake is Owned{
     event LogMarketPriceChanged(bytes32 id, uint oldPrice, uint newPrice);
     event LogMarketMinStakeChanged(bytes32 id, uint oldMinimum, uint newMinimum);
     event LogMarketStakeRateChanged(bytes32 id, uint oldRate, uint newRate);
+	event LogMarketToleranceChanged(bytes32 id, uint oldTolerance, uint newTolerance);
     
     event LogNewOrder(bytes32 marketID, bytes32 orderID, uint price, uint amount, uint stake);
     event LogOrderConfirmed(bytes32 orderID, address confirmer);
@@ -41,19 +42,34 @@ contract MarketStake is Owned{
     
     event LogDeposit(address depositor, uint deposit);
     event LogWithdraw(address withdrawer);
+	
+	function addMarket(uint price, uint minStake, uint stakeRate, uint tolerance) external returns (bytes32 id){
+        id = MarketLib.addMarket(register, price, minStake, stakeRate, tolerance);
+        LogNewMarket(id);
+    }
     
-    function changePrice(bytes32 id, uint newPrice) external;
+    function changePrice(bytes32 id, uint newPrice) external {
+		uint oldPrice = MarketConstLib.price(register, id);
+        MarketLib.changePrice(register, id, newPrice);
+        LogMarketPriceChanged(id, oldPrice, newPrice);
+	}
     
     function changeMinStake(bytes32 id, uint newMinimum) external {
-        uint oldMinimum = MarketLib.minStake(register, id);
+        uint oldMinimum = MarketConstLib.minStake(register, id);
         MarketLib.changeMinStake(register, id, newMinimum);
         LogMarketMinStakeChanged(id, oldMinimum, newMinimum);
     }
     
     function changeStakeRate(bytes32 id, uint newRate) external {
-        uint oldRate = MarketLib.minStake(register, id);
+        uint oldRate = MarketConstLib.stakeRate(register, id);
         MarketLib.changeStakeRate(register, id, newRate);
         LogMarketStakeRateChanged(id, oldRate, newRate);
+    }
+	
+	function changeTolerance(bytes32 id, uint newTolerance) external {
+        uint oldTolerance = MarketConstLib.tolerance(register, id);
+        MarketLib.changeTolerance(register, id, newTolerance);
+        LogMarketToleranceChanged(id, oldTolerance, newTolerance);
     }
     
     function shutdownMarket(bytes32 id) external {
@@ -66,14 +82,14 @@ contract MarketStake is Owned{
             orderBook,
             register,
             id,
-            amount,
-            isProduct()
+            amount
         );
         LogNewOrder(
             id,
             orderID,
-            OrderBookLib.price(orderBook, id),
-            amount, OrderBookLib.stake(orderBook, id)
+            OrderBookConstLib.price(orderBook, id),
+            amount,
+			OrderBookConstLib.stake(orderBook, id)
         );
     }
     
@@ -93,8 +109,7 @@ contract MarketStake is Owned{
             register,
             ledger,
             id,
-            reading,
-            isProduct()
+            reading
         );
         LogOrderNewReading(id, reading);
         if (success) {
@@ -103,17 +118,17 @@ contract MarketStake is Owned{
     }
     
     function cancelOrder(bytes32 id) external {
-        OrderBookLib.cancelOrder(orderBook, register, ledger, id, isProduct());
-        bytes32 market = OrderBookLib.market(orderBook, id);
+		bytes32 market = OrderBookConstLib.market(orderBook, id);
+        OrderBookLib.cancelOrder(orderBook, register, ledger, id);        
         LogOrderCancelled(
             id, 
-            (MarketLib.active(register, market)) ? msg.sender :
-            MarketLib.provider(register, market)
+            (MarketConstLib.active(register, market)) ? msg.sender :
+            MarketConstLib.provider(register, market)
         );
     }
     
     function bilateralCancelOrder(bytes32 id) external {
-        bool success = OrderBookLib.bilateralCancel(orderBook, register, ledger, id, isProduct());
+        bool success = OrderBookLib.bilateralCancel(orderBook, register, ledger, id);
         LogOrderBilateralSought(id, msg.sender);
         if (success) {
             LogOrderBilateralCancel(id);
@@ -137,65 +152,37 @@ contract MarketStake is Owned{
     function getPending() constant external returns (uint) {
         return LedgerLib.getPending(ledger);
     }
+	
+	function getProvider(bytes32 id) constant external returns (address) {
+		return MarketConstLib.provider(register, id);
+	}
+	
+	function doesExist(bytes32 id) constant external returns (bool) {
+		return MarketConstLib.exists(register,id);
+	}
+	
+	function isActive(bytes32 id) constant external returns (bool) {
+		return MarketConstLib.active(register,id);
+	}
+	
+	function getPrice(bytes32 id) constant external returns (uint) {
+		return MarketConstLib.price(register, id);
+	}
+	
+	function getMinStake(bytes32 id) constant external returns (uint) {
+		return MarketConstLib.minStake(register, id);
+	}
     
-    function isProduct() constant public returns (bool);
+	function getStakeRate(bytes32 id) constant external returns (uint) {
+		return MarketConstLib.stakeRate(register, id);
+	}
+	
+	function getTolerance(bytes32 id) constant external returns (uint) {
+		return MarketConstLib.tolerance(register, id);
+	}
+	
+    function isMetered() constant external returns (bool) {
+		return MarketConstLib.isMetered(register);
+	}
     
-}
-
-
-contract ProductStake is MarketStake {
-    
-    function ProductStake(
-        address ledger,
-        address register,
-        address orderBook
-    )
-    MarketStake(ledger, register, orderBook)
-    {}
-    
-    function changePrice(bytes32 id, uint newPrice) external {
-        uint oldPrice = MarketLib.price(register, id);
-        MarketLib.changeProductPrice(register, id, newPrice);
-        LogMarketPriceChanged(id, oldPrice, newPrice);
-    }
-    
-    function addMarket(uint price, uint minStake, uint stakeRate) external {
-        bytes32 id = MarketLib.addProduct(register, price, minStake, stakeRate);
-        LogNewMarket(id);
-    }
-    
-    function isProduct() constant public returns (bool) { return true; }
-}
-
-
-contract ServiceStake is MarketStake {
-    
-    function ServiceStake(
-        address ledger,
-        address register,
-        address orderBook
-    )
-    MarketStake(ledger, register, orderBook)
-    {}
-    
-    event LogMarketToleranceChanged(bytes32 id, uint oldTolerance, uint newTolerance);
-    
-    function changePrice(bytes32 id, uint newPrice) external {
-        uint oldPrice = MarketLib.price(register, id);
-        MarketLib.changeServicePrice(register, id, newPrice);
-        LogMarketPriceChanged(id, oldPrice, newPrice);
-    }
-    
-    function changeTolernace(bytes32 id, uint newTolerance) external {
-        uint oldTolerance = MarketLib.tolerance(register, id);
-        MarketLib.changeServiceTolerance(register, id, newTolerance);
-        LogMarketToleranceChanged(id, oldTolerance, newTolerance);
-    }
-    
-    function addMarket(uint price, uint minStake, uint stakeRate, uint tolerance) external {
-        bytes32 id = MarketLib.addService(register, price, minStake, stakeRate, tolerance);
-        LogNewMarket(id);
-    }
-    
-    function isProduct() constant public returns (bool) { return false; }
 }

@@ -2,7 +2,7 @@ pragma solidity ^0.4.11;
 
 import "./Owned.sol";
 
-contract Ledger is Owned {
+contract Ledger is Allowable {
     
     mapping(address => uint) public gains;
     mapping(address => uint) public locked;
@@ -36,7 +36,7 @@ contract Ledger is Owned {
 
     function addPending(address account, uint amount)
     external 
-    onlyOwner
+    onlyAllowed
     checkInvariant(account)
     checkSpace(account, amount)
     {
@@ -45,7 +45,7 @@ contract Ledger is Owned {
     
     function removePending(address account, uint amount)
     external 
-    onlyOwner
+    onlyAllowed
     checkInvariant(account)
     checkPending(account, amount)
     {
@@ -54,7 +54,7 @@ contract Ledger is Owned {
     
     function addLocked(address account, uint amount)
     external 
-    onlyOwner
+    onlyAllowed
     checkInvariant(account)
     checkSpace(account, amount)
     {
@@ -63,7 +63,7 @@ contract Ledger is Owned {
     
     function removeLocked(address account, uint amount)
     external 
-    onlyOwner
+    onlyAllowed
     checkInvariant(account)
     checkLocked(account, amount)
     {
@@ -72,7 +72,7 @@ contract Ledger is Owned {
     
     function addGains(address account, uint amount)
     external 
-    onlyOwner
+    onlyAllowed
     checkInvariant(account)
     checkSpace(account, amount)
     {
@@ -81,7 +81,7 @@ contract Ledger is Owned {
     
     function removeGains(address account, uint amount)
     external 
-    onlyOwner
+    onlyAllowed
     checkInvariant(account)
     checkGains(account, amount)
     {

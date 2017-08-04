@@ -10,35 +10,7 @@ library MarketLib {
         _;
     }
     
-    modifier mustExist(address register, bytes32 market) {
-        require(MarketRegister(register).exists(market));
-        _;
-    }
-    
-    function addProduct(
-        address register,
-        uint price,
-        uint minStake,
-        uint stakeRate
-    )
-    public 
-    returns (bytes32 id)
-    {
-        require(stakeRate > 1);
-        require(price <= uint(-1)/stakeRate);
-        
-        id = MarketRegister(register).new_id(msg.sender);
-        require(!MarketRegister(register).exists(id));
-        
-        MarketRegister(register).setExists(id, true);
-        MarketRegister(register).setProvider(id, msg.sender);
-        MarketRegister(register).setPrice(id, price);
-        MarketRegister(register).setMinStake(id, minStake);
-        MarketRegister(register).setStakeRate(id, stakeRate);
-        MarketRegister(register).setActive(id, true);
-    }
-    
-    function addService(
+    function addMarket(
         address register,
         uint price,
         uint minStake,
@@ -49,18 +21,26 @@ library MarketLib {
     returns (bytes32 id)
     {
         require(stakeRate > 1);
-        require(price >= stakeRate);
+		if (MarketRegister(register).isMetered()) {
+			require(price >= stakeRate);
+		} else {
+			require(price <= uint(-1)/stakeRate);
+		}
         
-        id = ServiceRegister(register).new_id(msg.sender);
-        require(!ServiceRegister(register).exists(id));
+        id = MarketRegister(register).new_id();
+        require(!MarketRegister(register).exists(id));
         
-        ServiceRegister(register).setExists(id, true);
-        ServiceRegister(register).setProvider(id, msg.sender);
-        ServiceRegister(register).setPrice(id, price);
-        ServiceRegister(register).setMinStake(id, minStake);
-        ServiceRegister(register).setStakeRate(id, stakeRate);
-        ServiceRegister(register).setTolerance(id, tolerance);
-        ServiceRegister(register).setActive(id, true);
+        MarketRegister(register).setExists(id, true);
+        MarketRegister(register).setProvider(id, msg.sender);
+        MarketRegister(register).setPrice(id, price);
+        MarketRegister(register).setMinStake(id, minStake);
+        MarketRegister(register).setStakeRate(id, stakeRate);
+		MarketRegister(register).setActive(id, true);
+		
+		if (MarketRegister(register).isMetered()) {
+			ServiceRegister(register).setTolerance(id, tolerance);
+		}
+        
     }
     
     function shutdownMarket(address register, bytes32 market)
@@ -71,26 +51,24 @@ library MarketLib {
         MarketRegister(register).setActive(market, false);
     }
     
-    function changeProductPrice(address register, bytes32 market, uint newPrice)
+    function changePrice(address register, bytes32 market, uint newPrice)
     public
     activeMarket(register, market)
     {
-        require(newPrice <= uint(-1)/MarketRegister(register).stakeRate(market));
-        MarketRegister(register).setPrice(market, newPrice);
+		if (MarketRegister(register).isMetered()) {
+			require(newPrice >= MarketRegister(register).stakeRate(market));
+			MarketRegister(register).setPrice(market, newPrice);
+		} else {
+			require(newPrice <= uint(-1)/MarketRegister(register).stakeRate(market));
+			MarketRegister(register).setPrice(market, newPrice);
+		}
     }
     
-    function changeServicePrice(address register, bytes32 market, uint newPrice)
+    function changeTolerance(address register, bytes32 market, uint newTolerance)
     public
     activeMarket(register, market)
     {
-        require(newPrice >= ServiceRegister(register).stakeRate(market));
-        ServiceRegister(register).setPrice(market, newPrice);
-    }
-    
-    function changeServiceTolerance(address register, bytes32 market, uint newTolerance)
-    public
-    activeMarket(register, market)
-    {
+		require(MarketRegister(register).isMetered());
         ServiceRegister(register).setTolerance(market, newTolerance);
     }
     
@@ -99,6 +77,11 @@ library MarketLib {
     activeMarket(register, market)
     {
         require(newRate > 1);
+		if (MarketRegister(register).isMetered()) {
+			require(MarketRegister(register).price(market) >= newRate);
+		} else {
+			require(MarketRegister(register).price(market) <= uint(-1)/newRate);
+		}
         MarketRegister(register).setStakeRate(market, newRate);
     }
     
@@ -109,6 +92,15 @@ library MarketLib {
         MarketRegister(register).setMinStake(market, newMinimum);
     }
     
+}
+
+library MarketConstLib {
+	
+	modifier mustExist(address register, bytes32 market) {
+        require(MarketRegister(register).exists(market));
+        _;
+    }
+	
     function exists(address register, bytes32 market)
     constant
     public
@@ -168,7 +160,16 @@ library MarketLib {
     mustExist(register, market)
     returns (uint)
     {
+		require(MarketRegister(register).isMetered());
         return ServiceRegister(register).tolerance(market);
     }
+	
+	function isMetered(address register)
+	constant
+	public
+	returns (bool)
+	{
+		return MarketRegister(register).isMetered();
+	}
 }
 

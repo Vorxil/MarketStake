@@ -1,39 +1,48 @@
 var Ledger = artifacts.require("Ledger");
-var MarketStake = artifacts.require("ProductStake");
+var MarketStake = artifacts.require("MarketStake");
 var OrderBook = artifacts.require("ProductOrderBook");
 var Register = artifacts.require("MarketRegister");
 
-contract('TestMarketStakeDeployment', function(accounts) {
+contract('TestMarketStakeLedger', function(accounts) {
+	
+	var dapp;
+	var ledger;
+	var register;
+	var orderBook;
+	
+	beforeEach(function() {
+		return Ledger.new().then(function(instance) {
+			ledger = instance;
+			return Register.new();
+		}).then(function(instance) {
+			register = instance;
+			return OrderBook.new();
+		}).then(function(instance) {
+			orderBook = instance;
+			return MarketStake.new(ledger.address, register.address, orderBook.address);
+		}).then(function(instance) {
+			dapp = instance;
+			return ledger.allow(dapp.address);
+		}).then(function() {
+			return register.allow(dapp.address);
+		}).then(function() {
+			return orderBook.allow(dapp.address);
+			
+		});
+	});
 	
 	it("Should be empty at deployment", function() {
-		
-		return MarketStake.deployed().then(function(instance) {
-			return instance.contract._eth.getBalance(instance.address);
-		}).then(function(balance) {
-			assert.equal(balance.toNumber(), 0, "Contract didn't start empty");
-		});
+		assert.equal(
+			dapp.contract._eth.getBalance(dapp.address).toNumber(),
+			0,
+			"Contract didn't start empty"
+		);
+		return;
 	});
 	
 	it("Should have ownership of subcontracts", function() {
 		
-		var dapp;
-		var ledger;
-		var register;
-		var orderBook;
-		
-		return MarketStake.deployed().then(function(instance) {
-			dapp = instance;
-			return Ledger.deployed();
-		}).then(function(instance) {
-			ledger = instance;
-			return Register.deployed();
-		}).then(function(instance) {
-			register = instance;
-			return OrderBook.deployed();
-		}).then(function(instance) {
-			orderBook = instance;
-			return dapp.ledger.call();
-		}).then(function(address) {
+		return dapp.ledger.call().then(function(address) {
 			assert.equal(address, ledger.address, "Ledger isn't the same!");
 			return dapp.register.call();
 		}).then(function(address) {
@@ -41,45 +50,30 @@ contract('TestMarketStakeDeployment', function(accounts) {
 			return dapp.orderBook.call();
 		}).then(function(address) {
 			assert.equal(address, orderBook.address, "Order book isn't the same!");
-			return ledger.owner.call();
-		}).then(function(address) {
-			assert.equal(address, dapp.address, "Dapp is not the owner of the ledger!");
-			return register.owner.call();
-		}).then(function(address) {
-			assert.equal(address, dapp.address, "Dapp is not the owner of the register!");
-			return orderBook.owner.call();
-		}).then(function(address) {
-			assert.equal(address, dapp.address, "Dapp is not the owner of the order book!");
+			return ledger.allowed.call(dapp.address);
+		}).then(function(allowed) {
+			assert.isTrue(allowed[0], "Dapp is not the owner of the ledger!");
+			return register.allowed.call(dapp.address);
+		}).then(function(allowed) {
+			assert.isTrue(allowed[0], "Dapp is not the owner of the register!");
+			return orderBook.allowed.call(dapp.address);
+		}).then(function(allowed) {
+			assert.isTrue(allowed[0], "Dapp is not the owner of the order book!");
 		});
 	});
 	
-});
-
-contract('TestMarketStakeDeposit', function() {
 	it("Should be able to deposit", function() {
-		var init_balance;
+		var init_balance = dapp.contract._eth.getBalance(dapp.address).toNumber();
 		var final_balance;
 		var init_pending;
 		var final_pending;
 		var amount = 100;
 		
-		var dapp;
-		
-		return MarketStake.deployed().then(function(instance) {
-			dapp = instance;
-			return dapp.contract._eth.getBalance(dapp.address);
-		}).then(function(balance) {
-			init_balance = balance.toNumber();
-			return dapp.getPending.call();
-		}).then(function(pending) {
+		return dapp.getPending().then(function(pending) {
 			init_pending = pending.toNumber();
 			return dapp.deposit({value: amount});
 		}).then(function() {
-			return dapp.contract._eth.getBalance(dapp.address);
-		}).then(function(balance) {
-			final_balance = balance.toNumber();
-			console.log(init_balance);
-			console.log(final_balance);
+			final_balance = dapp.contract._eth.getBalance(dapp.address).toNumber();
 			assert.equal(final_balance, init_balance + amount, amount + " should have been added.");
 			//As of TestRPC 4.0.1, this fails due to library calls from payable contract tx spends
 			//sent amount multiple times
@@ -89,10 +83,7 @@ contract('TestMarketStakeDeposit', function() {
 			assert.equal(final_pending, init_pending + amount, amount + " should have been added.");
 		});
 	});
-});
 	
-	
-contract('TestMarketStakeWithdraw', function() {
 	it("Should be able to withdraw", function() {
 		var init_balance;
 		var final_balance;
@@ -100,23 +91,13 @@ contract('TestMarketStakeWithdraw', function() {
 		var final_pending;
 		var amount = 100;
 		
-		var dapp;
-		
-		return MarketStake.deployed().then(function(instance) {
-			dapp = instance;
-			return dapp.contract._eth.getBalance(dapp.address);
-		}).then(function(balance) {
-			assert.equal(balance.toNumber(), 0, "Contract should have no ether to send");
-			return dapp.getPending.call();
-		}).then(function(pending) {
+		return dapp.getPending().then(function(pending) {
 			assert.equal(pending.toNumber(), 0, "Ledger should show no ether to send");
 			return dapp.withdraw();
 		}).then(function(error) {
 			return dapp.deposit({value: amount});
 		}).then(function() {
-			return dapp.contract._eth.getBalance(dapp.address);
-		}).then(function(balance) {
-			init_balance = balance.toNumber();
+			init_balance = dapp.contract._eth.getBalance(dapp.address).toNumber();
 			console.log(init_balance);
 			assert.equal(init_balance, amount, amount + " should have been added.");
 			//As of TestRPC 4.0.1, this fails due to library calls from payable contract tx spends
@@ -127,9 +108,7 @@ contract('TestMarketStakeWithdraw', function() {
 			assert.equal(init_pending, amount, amount + " should have been added.");
 			return dapp.withdraw();
 		}).then(function() {
-			return dapp.contract._eth.getBalance(dapp.address);
-		}).then(function(balance) {
-			final_balance = balance.toNumber();
+			final_balance = dapp.contract._eth.getBalance(dapp.address).toNumber();
 			console.log(final_balance);
 			assert.equal(final_pending, init_pending - amount, amount + " should have been withdrawn");
 			assert.equal(final_pending, 0, " Contract should be empty");

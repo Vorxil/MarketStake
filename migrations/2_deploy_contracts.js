@@ -1,10 +1,15 @@
 var LedgerLib = artifacts.require("LedgerLib");
 var MarketLib = artifacts.require("MarketLib");
+var MarketConstLib = artifacts.require("MarketConstLib");
 var OrderBookLib = artifacts.require("OrderBookLib");
+var OrderBookConstLib = artifacts.require("OrderBookConstLib");
+var MathLib = artifacts.require("MathLib");
 var Ledger = artifacts.require("Ledger");
-var Register = artifacts.require("MarketRegister");
-var OrderBook = artifacts.require("ProductOrderBook");
-var MarketStake = artifacts.require("ProductStake");
+var ProductRegister = artifacts.require("MarketRegister");
+var ProductOrderBook = artifacts.require("ProductOrderBook");
+var ServiceRegister = artifacts.require("ServiceRegister");
+var ServiceOrderBook = artifacts.require("ServiceOrderBook");
+var MarketStake = artifacts.require("MarketStake");
 
 
 module.exports = function(deployer) {
@@ -12,29 +17,22 @@ module.exports = function(deployer) {
 	deployer.deploy([
 		LedgerLib,
 		MarketLib,
-		OrderBookLib,
-		Ledger,
-		Register,
-		OrderBook
+		MarketConstLib,
+		OrderBookConstLib,
+		MathLib
 	]).then(function() {
-			return deployer.link(LedgerLib, MarketStake);
+		return deployer.link(MathLib, OrderBookLib);
 	}).then(function() {
-			return deployer.link(MarketLib, MarketStake);
+		return deployer.link(OrderBookConstLib, [OrderBookLib, MarketStake]);
 	}).then(function() {
-			return deployer.link(OrderBookLib, MarketStake);
+		return deployer.link(MarketConstLib, MarketStake);
 	}).then(function() {
-		return deployer.deploy(MarketStake, Ledger.address, Register.address, OrderBook.address);
+		return deployer.deploy(OrderBookLib);
 	}).then(function() {
-		return Ledger.deployed();
-	}).then(function(instance) {
-		return instance.transferOwnership(MarketStake.address);
+		return deployer.link(LedgerLib, MarketStake);
 	}).then(function() {
-		return Register.deployed();
-	}) .then(function(instance) {
-		return instance.transferOwnership(MarketStake.address);
+		return deployer.link(MarketLib, MarketStake);
 	}).then(function() {
-		return OrderBook.deployed();
-	}).then(function(instance) {
-		return instance.transferOwnership(MarketStake.address);
+		return deployer.link(OrderBookLib, MarketStake);
 	});
 };

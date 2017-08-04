@@ -1,0 +1,66 @@
+{
+  "contract_name": "MathLib",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "x",
+          "type": "uint256"
+        },
+        {
+          "name": "y",
+          "type": "uint256"
+        }
+      ],
+      "name": "average",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "x",
+          "type": "uint256"
+        },
+        {
+          "name": "y",
+          "type": "uint256"
+        }
+      ],
+      "name": "dist",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    }
+  ],
+  "unlinked_binary": "0x6060604052341561000f57600080fd5b5b60c98061001e6000396000f300606060405263ffffffff60e060020a6000350416632b7423ab8114602d5780636f8d998c14604b575b600080fd5b60396004356024356069565b60405190815260200160405180910390f35b60396004356024356080565b60405190815260200160405180910390f35b600280830490820401600183831616015b92915050565b6000818310156090578282036094565b8183035b90505b929150505600a165627a7a723058208d377973f01caeab78e43df523aca6c445cd2e17d7c6b6f9f73a5bc0818352a00029",
+  "networks": {
+    "1501756748662": {
+      "events": {},
+      "links": {},
+      "address": "0x6d86ad95ba98152ec32b4bf196a9aa8ddb11c006",
+      "updated_at": 1501761384889
+    },
+    "1501832794444": {
+      "events": {},
+      "links": {},
+      "address": "0x2508d5a815475b08f9c1cb8afc897fec1398bc81",
+      "updated_at": 1501841162918
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1501841162918
+}

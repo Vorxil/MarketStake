@@ -11,7 +11,7 @@ contract MarketRegister is UUID {
     
     function setProvider(bytes32 id, address value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     validAccount(value)
     { 
@@ -20,7 +20,7 @@ contract MarketRegister is UUID {
     
     function setActive(bytes32 id, bool value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     { 
         active[id] = value;
@@ -28,7 +28,7 @@ contract MarketRegister is UUID {
     
     function setPrice(bytes32 id, uint value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     { 
         price[id] = value;
@@ -36,7 +36,7 @@ contract MarketRegister is UUID {
     
     function setMinStake(bytes32 id, uint value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     { 
         minStake[id] = value;
@@ -44,11 +44,24 @@ contract MarketRegister is UUID {
     
     function setStakeRate(bytes32 id, uint value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     { 
         stakeRate[id] = value;
     }
+    
+    function deleteHelper(bytes32 id) internal {
+        super.deleteHelper(id);
+        delete provider[id];
+        delete active[id];
+        delete price[id];
+        delete minStake[id];
+        delete stakeRate[id];
+    }
+	
+	function isMetered() constant public returns (bool){
+		return false;
+	}
         
 }
 
@@ -57,9 +70,18 @@ contract ServiceRegister is MarketRegister {
 
     function setTolerance(bytes32 id, uint value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id) { 
         tolerance[id] = value;
     }
+    
+    function deleteHelper(bytes32 id) internal {
+        super.deleteHelper(id);
+        delete tolerance[id];
+    }
+	
+	function isMetered() constant public returns (bool){
+		return true;
+	}
         
 }

@@ -10,6 +10,7 @@ contract TestLedger {
 	
 	function beforeAll() {
 		ledger = new Ledger();
+		ledger.allow(this);
 	}
 	
 	function clear() {

@@ -24,7 +24,7 @@ contract OrderBook is UUID {
     
     function setMarket(bytes32 id, bytes32 market_id)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         markets[id] = market_id;
@@ -32,7 +32,7 @@ contract OrderBook is UUID {
     
     function setClient(bytes32 id, address client)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     validAccount(client)
     {
@@ -41,7 +41,7 @@ contract OrderBook is UUID {
     
     function setPrice(bytes32 id, uint value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         price[id] = value;
@@ -49,7 +49,7 @@ contract OrderBook is UUID {
     
     function setStake(bytes32 id, uint value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         stake[id] = value;
@@ -57,7 +57,7 @@ contract OrderBook is UUID {
     
     function setFee(bytes32 id, uint value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         fee[id] = value;
@@ -65,7 +65,7 @@ contract OrderBook is UUID {
     
     function setActive(bytes32 id, bool value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         active[id] = value;
@@ -73,7 +73,7 @@ contract OrderBook is UUID {
     
     function setConfirmations(bytes32 id, bool value, bool client)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         if (client) { confirmations[id].client = value; }
@@ -82,7 +82,7 @@ contract OrderBook is UUID {
     
     function setReadings(bytes32 id, uint value, bool client)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         if (client) { readings[id].client = value; }
@@ -91,7 +91,7 @@ contract OrderBook is UUID {
     
     function setGivenReadings(bytes32 id, bool value, bool client)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         if (client) { givenReadings[id].client = value; }
@@ -100,12 +100,30 @@ contract OrderBook is UUID {
     
     function setBilateral(bytes32 id, bool value, bool client)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         if (client) { bilateral_cancel[id].client = value; }
         else { bilateral_cancel[id].provider = value; }
     }
+	
+	function isMetered() external returns (bool) {
+		return false;
+	}
+	
+	function deleteHelper(bytes32 id) internal {
+		super.deleteHelper(id);
+		delete markets[id];
+		delete clients[id];
+		delete price[id];
+		delete stake[id];
+		delete fee[id];
+		delete active[id];
+		delete confirmations[id];
+		delete readings[id];
+		delete givenReadings[id];
+		delete bilateral_cancel[id];
+	}
     
 }
 
@@ -114,11 +132,16 @@ contract ProductOrderBook is OrderBook {
     
     function setCount(bytes32 id, uint value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         count[id] = value;
     }
+	
+	function deleteHelper(bytes32 id) internal {
+		super.deleteHelper(id);
+		delete count[id];
+	}
 }
 
 contract ServiceOrderBook is OrderBook {
@@ -126,9 +149,18 @@ contract ServiceOrderBook is OrderBook {
     
     function setTolerance(bytes32 id, uint value)
     external
-    onlyOwner
+    onlyAllowed
     mustExist(id)
     {
         tolerance[id] = value;
     }
+	
+	function deleteHelper(bytes32 id) internal {
+		super.deleteHelper(id);
+		delete tolerance[id];
+	}
+	
+	function isMetered() external returns (bool) {
+		return true;
+	}
 }

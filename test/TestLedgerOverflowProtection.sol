@@ -3,30 +3,7 @@ pragma solidity ^0.4.11;
 import "truffle/Assert.sol";
 import "truffle/DeployedAddresses.sol";
 import "../contracts/Ledger.sol";
-import "../contracts/Owned.sol";
-
-contract ThrowProxy {
-	
-	address public target;
-	bytes data;
-	
-	function ThrowProxy(address _target) {
-		target = _target;
-	}
-	
-	function transferOwnership(Owned owned, address new_owner) {
-		owned.transferOwnership(new_owner);
-	}
-	
-	function execute() returns (bool) {
-		return target.call(data);
-	}
-	
-	function() {
-		data = msg.data;
-	}
-	
-}
+import "./ThrowProxy.sol";
 
 contract TestLedgerOverflowProtection {
 	
@@ -38,6 +15,8 @@ contract TestLedgerOverflowProtection {
 	function beforeAll() {
 		ledger = new Ledger();
 		proxy = new ThrowProxy(address(ledger));
+		ledger.allow(proxy);
+		ledger.allow(this);
 	}
 	
 	function beforeEach() {

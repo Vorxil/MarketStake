@@ -22,23 +22,17 @@ library OrderBookLib {
         _;
     }
     
-    modifier mustExist(address orderBook, bytes32 id) {
-        require(OrderBook(orderBook).exists(id));
-        _;
-    }
-    
     function makeOrder(
         address orderBook,
         address register,
         bytes32 market,
-        uint amount,
-        bool isProduct
+        uint amount
     )
     public
     activeMarket(register, market)
     returns (bytes32 id)
     {
-        id = OrderBook(orderBook).new_id(msg.sender);
+        id = OrderBook(orderBook).new_id();
         require(!OrderBook(orderBook).exists(id));
         
         uint price = MarketRegister(register).price(id);
@@ -50,10 +44,10 @@ library OrderBookLib {
             msg.sender,
             price,
             MarketRegister(register).stakeRate(id),
-            (isProduct)?amount*price:amount
+            (MarketRegister(register).isMetered())?amount:amount*price
         );
         
-        if (isProduct) {
+        if (MarketRegister(register).isMetered()) {
             ProductOrderBook(orderBook).setCount(id, amount);
         } else {
             ServiceOrderBook(orderBook).setTolerance(
@@ -80,7 +74,7 @@ library OrderBookLib {
         
         OrderBook(orderBook).setConfirmations(id, true, (msg.sender == client));
         
-        if (fetchConfirm(orderBook, id)) {
+        if (OrderBookConstLib.fetchConfirm(orderBook, id)) {
             uint stake = OrderBook(orderBook).stake(id);
             uint fee = OrderBook(orderBook).fee(id);
             
@@ -101,8 +95,7 @@ library OrderBookLib {
         address orderBook,
         address register,
         address ledger,
-        bytes32 id,
-        bool isProduct
+        bytes32 id
     )
     public
     onlyParties(orderBook, register, id)
@@ -118,17 +111,14 @@ library OrderBookLib {
                 payFee(orderBook, ledger, id, client, provider, (msg.sender == provider));
             }
         }
-        (isProduct)?
-            deleteProductOrder(orderBook, id) : 
-            deleteServiceOrder(orderBook, id);
+        OrderBook(orderBook).deleteItem(id);
     }
     
     function bilateralCancel(
         address orderBook,
         address register,
         address ledger,
-        bytes32 id,
-        bool isProduct
+        bytes32 id
     )
     public
     onlyParties(orderBook, register, id)
@@ -141,11 +131,9 @@ library OrderBookLib {
         if (OrderBook(orderBook).active(id)) {
             OrderBook(orderBook).setBilateral(id, true, (msg.sender == client));
             
-            if (fetchBilateral(orderBook, id)) {
+            if (OrderBookConstLib.fetchBilateral(orderBook, id)) {
                 refundOrder(orderBook, ledger, id, client, provider);
-                (isProduct)?
-                    deleteProductOrder(orderBook, id) : 
-                    deleteServiceOrder(orderBook, id);
+                OrderBook(orderBook).deleteItem(id);
                 success = true;
             }
         }
@@ -156,8 +144,7 @@ library OrderBookLib {
         address register,
         address ledger,
         bytes32 id,
-        uint reading,
-        bool isProduct
+        uint reading
     )
     public
     onlyParties(orderBook, register, id)
@@ -173,141 +160,24 @@ library OrderBookLib {
         OrderBook(orderBook).setGivenReadings(id, true, isClient);
         OrderBook(orderBook).setReadings(id, reading, isClient);
         
-        if (fetchGiven(orderBook, id)) {
-            (cost, success) = computeCost(orderBook, id, isProduct);
+        if (OrderBookConstLib.fetchGiven(orderBook, id)) {
+            (cost, success) = computeCost(
+				orderBook,
+				id,
+				MarketRegister(register).isMetered()
+			);
             if (success) {
                 fillOrder(orderBook, ledger, id, client, provider, cost);
-                (isProduct)?
-                    deleteProductOrder(orderBook, id) : 
-                    deleteServiceOrder(orderBook, id);
+                OrderBook(orderBook).deleteItem(id);
             }
         }
         
     }
     
-    function fetchConfirm(address orderBook, bytes32 id)
-    constant
-    public
-    returns (bool isConfirmed)
-    {
-        bool clientConfirm;
-        bool providerConfirm;
-        
-        (clientConfirm, providerConfirm) = OrderBook(orderBook).confirmations(id);
-        
-        return (clientConfirm && providerConfirm);
-    }
-    
-    function fetchBilateral(address orderBook, bytes32 id)
-    constant
-    public
-    returns (bool isConfirmed)
-    {
-        bool clientConfirm;
-        bool providerConfirm;
-        
-        (clientConfirm, providerConfirm) = OrderBook(orderBook).bilateral_cancel(id);
-        
-        return (clientConfirm && providerConfirm);
-    }
-    
-    function fetchGiven(address orderBook, bytes32 id)
-    constant
-    public
-    returns (bool isConfirmed)
-    {
-        bool clientConfirm;
-        bool providerConfirm;
-        
-        (clientConfirm, providerConfirm) = OrderBook(orderBook).givenReadings(id);
-        
-        return (clientConfirm && providerConfirm);
-    }
-    
-    function exists(address orderBook, bytes32 id)
-    constant
-    public
-    returns (bool)
-    {
-        return OrderBook(orderBook).exists(id);
-    }
-    
-    function active(address orderBook, bytes32 id)
-    constant
-    public
-    mustExist(orderBook, id)
-    returns (bool)
-    {
-        return OrderBook(orderBook).active(id);
-    }
-    
-    function market(address orderBook, bytes32 id)
-    constant
-    public
-    mustExist(orderBook, id)
-    returns (bytes32)
-    {
-        return OrderBook(orderBook).markets(id);
-    }
-    
-    function client(address orderBook, bytes32 id)
-    constant
-    public
-    mustExist(orderBook, id)
-    returns (address)
-    {
-        return OrderBook(orderBook).clients(id);
-    }
-    
-    function price(address orderBook, bytes32 id)
-    constant
-    public
-    mustExist(orderBook, id)
-    returns (uint)
-    {
-        return OrderBook(orderBook).price(id);
-    }
-    
-    function stake(address orderBook, bytes32 id)
-    constant
-    public
-    mustExist(orderBook, id)
-    returns (uint)
-    {
-        return OrderBook(orderBook).stake(id);
-    }
-    
-    function fee(address orderBook, bytes32 id)
-    constant
-    public
-    mustExist(orderBook, id)
-    returns (uint)
-    {
-        return OrderBook(orderBook).fee(id);
-    }
-    
-    function count(address orderBook, bytes32 id)
-    constant
-    public
-    mustExist(orderBook, id)
-    returns (uint)
-    {
-        return ProductOrderBook(orderBook).count(id);
-    }
-    
-    function tolerance(address orderBook, bytes32 id)
-    constant
-    public
-    mustExist(orderBook, id)
-    returns (uint)
-    {
-        return ServiceOrderBook(orderBook).tolerance(id);
-    }
-    
     function computeCost(
         address orderBook,
         bytes32 id,
-        bool isProduct
+        bool isMetered
     )
     private
     returns (uint cost, bool success)
@@ -317,20 +187,15 @@ library OrderBookLib {
         
         (clientReading, providerReading) = OrderBook(orderBook).readings(id);
         
-        if (isProduct) {
+        if (!isMetered) {
             cost = OrderBook(orderBook).fee(id);
             success = (clientReading == providerReading);
         } else {
             uint tolerance = ServiceOrderBook(orderBook).tolerance(id);
             uint price = OrderBook(orderBook).price(id);
-            if ((clientReading <= providerReading && 
-                providerReading - clientReading <= tolerance) ||
-                (clientReading > providerReading &&
-                clientReading - providerReading <= tolerance)) {
+            if (MathLib.dist(clientReading, providerReading) <= tolerance) {
 
-                uint avg = clientReading>>1 +
-                            providerReading>>1 +
-                            (clientReading & providerReading & 1);
+                uint avg = MathLib.average(clientReading, providerReading);
                 
                 cost = avg*price;
                 if (price != 0 && avg > cost/price) {
@@ -411,34 +276,6 @@ library OrderBookLib {
         
     }
     
-    function deleteOrder(address orderBook, bytes32 id) private {
-        OrderBook(orderBook).setMarket(id, bytes32(0));
-        OrderBook(orderBook).setClient(id, address(0));
-        OrderBook(orderBook).setPrice(id, 0);
-        OrderBook(orderBook).setStake(id, 0);
-        OrderBook(orderBook).setFee(id, 0);
-        OrderBook(orderBook).setActive(id, false);
-        OrderBook(orderBook).setConfirmations(id, false, true);
-        OrderBook(orderBook).setConfirmations(id, false, false);
-        OrderBook(orderBook).setReadings(id, 0, true);
-        OrderBook(orderBook).setReadings(id, 0, false);
-        OrderBook(orderBook).setGivenReadings(id, false, true);
-        OrderBook(orderBook).setGivenReadings(id, false, false);
-        OrderBook(orderBook).setBilateral(id, false, true);
-        OrderBook(orderBook).setBilateral(id, false, false);
-        OrderBook(orderBook).setExists(id, false);
-    }
-    
-    function deleteProductOrder(address orderBook, bytes32 id) private {
-        ProductOrderBook(orderBook).setCount(id, 0);
-        deleteOrder(orderBook, id);
-    }
-    
-    function deleteServiceOrder(address orderBook, bytes32 id) private {
-        ServiceOrderBook(orderBook).setTolerance(id, 0);
-        deleteOrder(orderBook, id);
-    }
-    
     function createOrder(
         address orderBook,
         bytes32 id,
@@ -457,6 +294,142 @@ library OrderBookLib {
         OrderBook(orderBook).setStake(id, cost*stakeRate);
         OrderBook(orderBook).setFee(id, cost);
     }
+}
+
+library OrderBookConstLib {
+	
+	modifier mustExist(address orderBook, bytes32 id) {
+        require(OrderBook(orderBook).exists(id));
+        _;
+    }
+
+	function exists(address orderBook, bytes32 id)
+    constant
+    public
+    returns (bool)
+    {
+        return OrderBook(orderBook).exists(id);
+    }
     
+    function active(address orderBook, bytes32 id)
+    constant
+    public
+    mustExist(orderBook, id)
+    returns (bool)
+    {
+        return OrderBook(orderBook).active(id);
+    }
     
+    function market(address orderBook, bytes32 id)
+    constant
+    public
+    mustExist(orderBook, id)
+    returns (bytes32)
+    {
+        return OrderBook(orderBook).markets(id);
+    }
+    
+    function client(address orderBook, bytes32 id)
+    constant
+    public
+    mustExist(orderBook, id)
+    returns (address)
+    {
+        return OrderBook(orderBook).clients(id);
+    }
+    
+    function price(address orderBook, bytes32 id)
+    constant
+    public
+    mustExist(orderBook, id)
+    returns (uint)
+    {
+        return OrderBook(orderBook).price(id);
+    }
+    
+    function stake(address orderBook, bytes32 id)
+    constant
+    public
+    mustExist(orderBook, id)
+    returns (uint)
+    {
+        return OrderBook(orderBook).stake(id);
+    }
+    
+    function fee(address orderBook, bytes32 id)
+    constant
+    public
+    mustExist(orderBook, id)
+    returns (uint)
+    {
+        return OrderBook(orderBook).fee(id);
+    }
+    
+    function count(address orderBook, bytes32 id)
+    constant
+    public
+    mustExist(orderBook, id)
+    returns (uint)
+    {
+        return ProductOrderBook(orderBook).count(id);
+    }
+    
+    function tolerance(address orderBook, bytes32 id)
+    constant
+    public
+    mustExist(orderBook, id)
+    returns (uint)
+    {
+        return ServiceOrderBook(orderBook).tolerance(id);
+    }
+	
+	function fetchConfirm(address orderBook, bytes32 id)
+    constant
+    public
+    returns (bool isConfirmed)
+    {
+        bool clientConfirm;
+        bool providerConfirm;
+        
+        (clientConfirm, providerConfirm) = OrderBook(orderBook).confirmations(id);
+        
+        return (clientConfirm && providerConfirm);
+    }
+    
+    function fetchBilateral(address orderBook, bytes32 id)
+    constant
+    public
+    returns (bool isConfirmed)
+    {
+        bool clientConfirm;
+        bool providerConfirm;
+        
+        (clientConfirm, providerConfirm) = OrderBook(orderBook).bilateral_cancel(id);
+        
+        return (clientConfirm && providerConfirm);
+    }
+    
+    function fetchGiven(address orderBook, bytes32 id)
+    constant
+    public
+    returns (bool isConfirmed)
+    {
+        bool clientConfirm;
+        bool providerConfirm;
+        
+        (clientConfirm, providerConfirm) = OrderBook(orderBook).givenReadings(id);
+        
+        return (clientConfirm && providerConfirm);
+    }
+}
+
+library MathLib {
+	
+	function dist(uint x, uint y) constant public returns (uint){
+		return (x>=y)?(x-y):(y-x);
+	}
+	
+	function average(uint x, uint y) constant public returns (uint) {
+		return (x>>1) + (y>>1) + (x & y & 1);
+	}
 }

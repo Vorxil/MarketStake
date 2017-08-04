@@ -2,7 +2,7 @@ pragma solidity ^0.4.11;
 
 import "./Owned.sol";
 
-contract UUID is Owned {
+contract UUID is Allowable {
     
     mapping(bytes32 => bool) public exists;
     uint public nonce = 0;
@@ -17,17 +17,24 @@ contract UUID is Owned {
         _;
     }
     
-    function setExists(bytes32 id, bool value) external onlyOwner {
+    function setExists(bytes32 id, bool value) external onlyAllowed {
         exists[id] = value;
     }
     
-    function new_id(address account) 
+    function new_id() 
     external
-    onlyOwner
-    validAccount(account)
+    onlyAllowed
     returns(bytes32)
     {
-        return sha3(this, account, block.number, nonce++);
+        return sha3(this, block.number, nonce++);
+    }
+    
+    function deleteItem(bytes32 id) external onlyAllowed mustExist(id) {
+        deleteHelper(id);
+    }
+    
+    function deleteHelper(bytes32 id) internal {
+        delete exists[id];
     }
     
     function() { revert(); }
