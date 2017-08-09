@@ -1,8 +1,6 @@
 var LedgerLib = artifacts.require("LedgerLib");
 var MarketLib = artifacts.require("MarketLib");
-var MarketConstLib = artifacts.require("MarketConstLib");
 var OrderBookLib = artifacts.require("OrderBookLib");
-var OrderBookConstLib = artifacts.require("OrderBookConstLib");
 var MathLib = artifacts.require("MathLib");
 var Ledger = artifacts.require("Ledger");
 var ProductRegister = artifacts.require("MarketRegister");
@@ -17,15 +15,9 @@ module.exports = function(deployer) {
 	deployer.deploy([
 		LedgerLib,
 		MarketLib,
-		MarketConstLib,
-		OrderBookConstLib,
 		MathLib
 	]).then(function() {
 		return deployer.link(MathLib, OrderBookLib);
-	}).then(function() {
-		return deployer.link(OrderBookConstLib, [OrderBookLib, MarketStake]);
-	}).then(function() {
-		return deployer.link(MarketConstLib, MarketStake);
 	}).then(function() {
 		return deployer.deploy(OrderBookLib);
 	}).then(function() {

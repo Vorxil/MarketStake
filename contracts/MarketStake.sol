@@ -7,18 +7,21 @@ import "./OrderBookLib.sol";
 
 contract MarketStake is Owned{
     
-    address public ledger;
+    address public clientLedger;
+	address public providerLedger;
     address public register;
     address public orderBook;
     
     function MarketStake(
-        address _ledger,
+        address _clientLedger,
+		address _providerLedger,
         address _register,
         address _orderBook
     )
     Owned()
     {
-        ledger = _ledger;
+        clientLedger = _clientLedger;
+		providerLedger = _providerLedger;
         register = _register;
         orderBook = _orderBook;
     }
@@ -40,8 +43,10 @@ contract MarketStake is Owned{
     event LogOrderBilateralSought(bytes32 orderID, address seeker);
     event LogOrderBilateralCancel(bytes32 orderID);
     
-    event LogDeposit(address depositor, uint deposit);
-    event LogWithdraw(address withdrawer);
+    event LogDepositClient(address depositor, uint deposit);
+    event LogWithdrawClient(address withdrawer);
+	event LogDepositProvider(address depositor, uint deposit);
+    event LogWithdrawProvider(address withdrawer);
 	
 	function addMarket(uint price, uint minStake, uint stakeRate, uint tolerance) external returns (bytes32 id){
         id = MarketLib.addMarket(register, price, minStake, stakeRate, tolerance);
@@ -49,25 +54,25 @@ contract MarketStake is Owned{
     }
     
     function changePrice(bytes32 id, uint newPrice) external {
-		uint oldPrice = MarketConstLib.price(register, id);
+		uint oldPrice = MarketRegister(register).price(id);
         MarketLib.changePrice(register, id, newPrice);
         LogMarketPriceChanged(id, oldPrice, newPrice);
 	}
     
     function changeMinStake(bytes32 id, uint newMinimum) external {
-        uint oldMinimum = MarketConstLib.minStake(register, id);
+        uint oldMinimum = MarketRegister(register).minStake(id);
         MarketLib.changeMinStake(register, id, newMinimum);
         LogMarketMinStakeChanged(id, oldMinimum, newMinimum);
     }
     
     function changeStakeRate(bytes32 id, uint newRate) external {
-        uint oldRate = MarketConstLib.stakeRate(register, id);
+        uint oldRate = MarketRegister(register).stakeRate(id);
         MarketLib.changeStakeRate(register, id, newRate);
         LogMarketStakeRateChanged(id, oldRate, newRate);
     }
 	
 	function changeTolerance(bytes32 id, uint newTolerance) external {
-        uint oldTolerance = MarketConstLib.tolerance(register, id);
+        uint oldTolerance = ServiceRegister(register).tolerance(id);
         MarketLib.changeTolerance(register, id, newTolerance);
         LogMarketToleranceChanged(id, oldTolerance, newTolerance);
     }
@@ -87,14 +92,20 @@ contract MarketStake is Owned{
         LogNewOrder(
             id,
             orderID,
-            OrderBookConstLib.price(orderBook, id),
+            OrderBook(orderBook).price(orderID),
             amount,
-			OrderBookConstLib.stake(orderBook, id)
+			OrderBook(orderBook).stake(orderID)
         );
     }
     
     function confirm(bytes32 id) external {
-        bool success = OrderBookLib.confirmOrder(orderBook, register, ledger, id);
+        bool success = OrderBookLib.confirmOrder(
+			orderBook,
+			register,
+			clientLedger,
+			providerLedger,
+			id
+		);
         LogOrderConfirmed(id, msg.sender);
         if (success) {
             LogOrderActivated(id);
@@ -107,7 +118,8 @@ contract MarketStake is Owned{
         (cost, success) = OrderBookLib.completeOrder(
             orderBook,
             register,
-            ledger,
+            clientLedger,
+			providerLedger,
             id,
             reading
         );
@@ -118,71 +130,52 @@ contract MarketStake is Owned{
     }
     
     function cancelOrder(bytes32 id) external {
-		bytes32 market = OrderBookConstLib.market(orderBook, id);
-        OrderBookLib.cancelOrder(orderBook, register, ledger, id);        
+		bytes32 market = OrderBook(orderBook).markets(id);
+        OrderBookLib.cancelOrder(
+			orderBook,
+			register,
+			clientLedger,
+			providerLedger,
+			id
+		);        
         LogOrderCancelled(
             id, 
-            (MarketConstLib.active(register, market)) ? msg.sender :
-            MarketConstLib.provider(register, market)
+            (MarketRegister(register).active(market)) ? msg.sender :
+			MarketRegister(register).provider(market)
         );
     }
     
     function bilateralCancelOrder(bytes32 id) external {
-        bool success = OrderBookLib.bilateralCancel(orderBook, register, ledger, id);
+        bool success = OrderBookLib.bilateralCancel(
+			orderBook,
+			register,
+			clientLedger,
+			providerLedger,
+			id
+		);
         LogOrderBilateralSought(id, msg.sender);
         if (success) {
             LogOrderBilateralCancel(id);
         }
     }
     
-    function deposit() payable external {
-        LedgerLib.deposit(ledger, msg.value);
-        LogDeposit(msg.sender, msg.value);
+    function depositClient() payable external {
+        LedgerLib.deposit(clientLedger, msg.value);
+        LogDepositClient(msg.sender, msg.value);
     }
     
-    function withdraw() external {
-        LedgerLib.withdraw(ledger);
-        LogWithdraw(msg.sender);
+    function withdrawClient() external {
+        LedgerLib.withdraw(clientLedger);
+        LogWithdrawClient(msg.sender);
+    }    
+	
+	function depositProvider() payable external {
+        LedgerLib.deposit(providerLedger, msg.value);
+        LogDepositProvider(msg.sender, msg.value);
     }
     
-    function getBalance() constant external returns (uint) {
-        return LedgerLib.getBalance(ledger);
-    }
-    
-    function getPending() constant external returns (uint) {
-        return LedgerLib.getPending(ledger);
-    }
-	
-	function getProvider(bytes32 id) constant external returns (address) {
-		return MarketConstLib.provider(register, id);
-	}
-	
-	function doesExist(bytes32 id) constant external returns (bool) {
-		return MarketConstLib.exists(register,id);
-	}
-	
-	function isActive(bytes32 id) constant external returns (bool) {
-		return MarketConstLib.active(register,id);
-	}
-	
-	function getPrice(bytes32 id) constant external returns (uint) {
-		return MarketConstLib.price(register, id);
-	}
-	
-	function getMinStake(bytes32 id) constant external returns (uint) {
-		return MarketConstLib.minStake(register, id);
-	}
-    
-	function getStakeRate(bytes32 id) constant external returns (uint) {
-		return MarketConstLib.stakeRate(register, id);
-	}
-	
-	function getTolerance(bytes32 id) constant external returns (uint) {
-		return MarketConstLib.tolerance(register, id);
-	}
-	
-    function isMetered() constant external returns (bool) {
-		return MarketConstLib.isMetered(register);
-	}
-    
+    function withdrawProvider() external {
+        LedgerLib.withdraw(providerLedger);
+        LogWithdrawProvider(msg.sender);
+    }    
 }

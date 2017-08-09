@@ -67,7 +67,7 @@ contract Allowable is Owned {
     bool scheduled = false;
     
     event LogUpgradeScheduled(
-        address upgradeTo,
+        address _upgradeTo,
         string sourceCodeAt,
         string compileOpts,
         bytes32 sha3Hash,
@@ -90,7 +90,7 @@ contract Allowable is Owned {
         require(daysAhead >= (2 weeks));
         
         upgradeTo = _upgradeTo;
-        upgradeTimeBlocks = block.number + (daysAhead)/(5 seconds);
+        upgradeTimeBlocks = block.number + (daysAhead * (1 days))/(5 seconds);
         scheduled = true;
         
         LogUpgradeScheduled(_upgradeTo, sourceCodeAt, compileOpts, sha3Hash, upgradeTimeBlocks);

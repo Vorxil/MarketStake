@@ -107,7 +107,7 @@ contract OrderBook is UUID {
         else { bilateral_cancel[id].provider = value; }
     }
 	
-	function isMetered() external returns (bool) {
+	function isMetered() constant external returns (bool) {
 		return false;
 	}
 	
@@ -160,7 +160,7 @@ contract ServiceOrderBook is OrderBook {
 		delete tolerance[id];
 	}
 	
-	function isMetered() external returns (bool) {
+	function isMetered() constant external returns (bool) {
 		return true;
 	}
 }
