@@ -86,6 +86,7 @@ function fetchOrderID(result, eventName, market) {
 	return id;
 }
 
+//TODO: Reorganize, test basic functionality first, then assume correctness.
 contract("TestProductOrderBook", function() {
 	
 	var dapp;
@@ -168,12 +169,31 @@ contract("TestProductOrderBook", function() {
 		});
 	});
 	
+	function checkLedger(ledger, account, pending, locked, gains) {
+		return ledger.pending(account).then(function(p) {
+			assert.equal(p, pending, "Pending should match");
+			return clientLedger.locked(account);
+		}).then(function(b) {
+			assert.equal(b, locked, "Locked should match");
+			return clientLedger.gains(account);
+		}).then(function(g) {
+			assert.equal(g, gains, "Gains should match");
+		});
+	}
+	
 	function order(market, count, sender, expectedStake, expectedFee) {
 		var id;
 		
 		function worker() {
-			return dapp.order(market, count, {from: client}).then(function(result) {
+			return dapp.order(market, count, {from: sender}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market);
+				assertUserEvent(
+					result,
+					"LogNewOrder",
+					["marketID", "orderID", "price", "amount", "stake"],
+					[market_id, id, price, count, expectedStake],
+					"Event LogNewOrder should be fired"
+				);
 				return book.exists(id);
 			}).then(function(b) {
 				assert.isTrue(b, "Order should exist");
@@ -185,7 +205,7 @@ contract("TestProductOrderBook", function() {
 				assert.equal(m, market, "Order should have the right market");
 				return book.clients(id);
 			}).then(function(a) {
-				assert.equal(a, client, "Client of the order should be the sender of the order");
+				assert.equal(a, sender, "Client of the order should be the sender of the order");
 				return book.price(id);
 			}).then(function(p) {
 				assert.equal(p, price, "Price should match");
@@ -211,24 +231,9 @@ contract("TestProductOrderBook", function() {
 			return book.active(id);
 		}).then(function(a) {
 			assert.isFalse(a, "Order should not yet be activated");
-			return clientLedger.pending(client);
-		}).then(function(p) {
-			assert.equal(p, client_deposit, "Client funds should not yet be moved");
-			return clientLedger.locked(client);
-		}).then(function(b) {
-			assert.equal(b, 0, "Client ledger should be intact.");
-			return clientLedger.gains(client);
-		}).then(function(g) {
-			assert.equal(g, 0, "Client ledger should be intact.");
-			return providerLedger.pending(provider);
-		}).then(function(p) {
-			assert.equal(p, provider_deposit, "Provider funds should not yet be moved");
-			return providerLedger.locked(provider);
-		}).then(function(b) {
-			assert.equal(b, 0, "Provider ledger should be intact.");
-			return providerLedger.gains(provider);
-		}).then(function(g) {
-			assert.equal(g, 0, "Provider ledger should be intact.");
+			return checkLedger(clientLedger, client, client_deposit, 0, 0);
+		}).then(function() {
+			return checkLedger(providerLedger, provider, provider_deposit, 0, 0);
 		});
 	}
 	
@@ -239,24 +244,21 @@ contract("TestProductOrderBook", function() {
 			return book.active(id);
 		}).then(function(a) {
 			assert.isTrue(a, "Order should be activated");
-			return clientLedger.pending(client);
-		}).then(function(p) {
-			assert.equal(p, client_deposit-stake, "Client funds should not yet be moved");
-			return clientLedger.locked(client);
-		}).then(function(b) {
-			assert.equal(b, stake, "Client ledger should be intact.");
-			return clientLedger.gains(client);
-		}).then(function(g) {
-			assert.equal(g, fee, "Client ledger should be intact.");
-			return providerLedger.pending(provider);
-		}).then(function(p) {
-			assert.equal(p, provider_deposit-stake, "Provider funds should not yet be moved");
-			return providerLedger.locked(provider);
-		}).then(function(b) {
-			assert.equal(b, stake, "Provider ledger should be intact.");
-			return providerLedger.gains(provider);
-		}).then(function(g) {
-			assert.equal(g, 2*fee, "Provider ledger should be intact.");
+			return checkLedger(clientLedger, client, client_deposit-stake, stake, fee);
+		}).then(function() {
+			return checkLedger(providerLedger, provider, provider_deposit-stake, stake, 2*fee);
+		});
+	}
+	
+	function dep(client, provider, deposit) {
+		return dapp.depositClient({value: deposit, from: client}).then(function() {
+			return dapp.depositProvider({value: deposit, from: provider});
+		});
+	}
+
+	function wit(client, provider) {
+		return dapp.withdrawClient({from: client}).then(function() {
+			return dapp.withdrawProvider({from: provider});
 		});
 	}
 	
@@ -323,79 +325,924 @@ contract("TestProductOrderBook", function() {
 		var final_client;
 		var final_provider;
 		
-		return order(market_id, count, client, stake, fee).then(function(_id) {
-			id = _id;
-			console.log(id);
-			return dapp.depositClient({value: deposit, from: client});
-		}).then(function(result) {
-			return dapp.depositProvider({value: deposit, from: provider});
-		}).then(function(result) {
-			return clientLedger.pending(client);
-		}).then(function(p) {
-			init_client = p;
-			return providerLedger.pending(provider);
-		}).then(function(p) {
-			init_provider = p;
-			return dapp.confirm(id, {from: client});
-		}).then(function(result) {
+		function clientProvider() {
+			return order(market_id, count, client, stake, fee).then(function(_id) {
+				id = _id;
+				console.log(id);
+				return dapp.depositClient({value: deposit, from: client});
+			}).then(function(result) {
+				return dapp.depositProvider({value: deposit, from: provider});
+			}).then(function(result) {
+				return clientLedger.pending(client);
+			}).then(function(p) {
+				init_client = p;
+				return providerLedger.pending(provider);
+			}).then(function(p) {
+				init_provider = p;
+				return dapp.confirm(id, {from: client});
+			}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderConfirmed",
+					["orderID", "confirmer"],
+					[id, client],
+					"Event LogOrderConfirmed should be fired"
+				);
+				return verifyOrderNotStarted(
+					id,
+					client,
+					deposit,
+					provider,
+					deposit,
+					[true, false]
+				);
+			}).then(function() {			
+				return dapp.confirm(id, {from: provider});
+			}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderConfirmed",
+					["orderID", "confirmer"],
+					[id, provider],
+					"Event LogOrderConfirmed should be fired"
+				);
+				assertUserEvent(
+					result,
+					"LogOrderActivated",
+					["orderID"],
+					[id],
+					"Event LogOrderActivated should be fired"
+				);
+				return verifyOrderStarted(
+					id,
+					client,
+					deposit,
+					provider,
+					deposit,
+					stake,
+					fee
+				);
+			}).then(function() {
+				return clientLedger.pending(client);
+			}).then(function(p) {
+				final_client = p;
+				return providerLedger.pending(provider);
+			}).then(function(p) {
+				final_provider = p;
+				assert.equal(final_client, init_client-stake, "Stake should be locked");
+				assert.equal(final_provider, init_provider-stake, "Stake should be locked");
+			});
+		}
+		
+		function providerProvider() {
+			return order(market_id, count, provider, stake, fee).then(function(_id) {
+				id = _id;
+				init_provider = final_provider;
+				return dapp.depositClient({value: deposit, from: provider});
+			}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogDepositClient",
+					["depositor", "deposit"],
+					[provider, deposit],
+					"Event LogDepositClient should have been fired"
+				);
+				return clientLedger.pending(provider);
+			}).then(function(p) {
+				init_client = p;
+				return dapp.confirm(id, {from: provider});
+			}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderConfirmed",
+					["orderID", "confirmer"],
+					[id, provider],
+					"Event LogOrderConfirmed should be fired"
+				);
+				assertUserEvent(
+					result,
+					"LogOrderActivated",
+					["orderID"],
+					[id],
+					"Event LogOrderActivated should be fired"
+				);
+				return book.confirmations(id).then(function(c) {
+					assert.isTrue(c[0], "Client should be confirmed");
+					assert.isTrue(c[1], "Provider should be confirmed");				
+					return book.active(id);
+				}).then(function(a) {
+					assert.isTrue(a, "Order should be activated");
+					return checkLedger(clientLedger, provider, deposit-stake, stake, fee);
+				}).then(function() {
+					return checkLedger(providerLedger, provider, deposit-2*stake, 2*stake, 4*fee);
+				});
+			}).then(function() {
+				return clientLedger.pending(provider).then(function(p) {
+					final_client = p;
+					return providerLedger.pending(provider);
+				}).then(function(p) {
+					final_provider = p;
+					assert.equal(final_client, init_client-stake, "Stake should be locked");
+					assert.equal(final_provider, init_provider-stake, "Stake should be locked");
+				});
+			});
+		}
+	});
+	
+	it("Given lack of funds, order should not be confirmable", function() {
+		var id;
+		var count = 1;
+		var stake = count*price*stakeRate;
+		var fee = count*price;		
+		
+		function clientProvider() {
+			return clientLedger.pending(client).then(function(p) {
+				assert.equal(p, 0, "Client should have no money on the ledger");
+				return providerLedger.pending(provider);
+			}).then(function(p) {
+				assert.equal(p, 0, "Provider should have no money on the ledger");
+				return order(market_id, count, client, stake, fee);
+			}).then(function(_id) {
+				id = _id;
+				return verifyOrderNotStarted(id, client, 0, provider, 0, [false, false]);
+			}).then(function() {
+				return dapp.confirm(id, {from: client});
+			}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderConfirmed",
+					["orderID", "confirmer"],
+					[id, client],
+					"Event LogOrderConfirmed should be fired"
+				);
+				return verifyOrderNotStarted(id, client, 0, provider, 0, [true, false]);
+			}).then(function() {
+				return dapp.confirm(id, {from: provider}).then(assert.fail).catch(function(error) {
+					assertInvalid(error, "Invalid opcode due to lack of funds");
+					return verifyOrderNotStarted(id, client, 0, provider, 0, [true, false]);
+				});
+			}).then(function() {
+				return order(market_id, count, client, stake, fee);
+			}).then(function(_id) {
+				id = _id;
+				return verifyOrderNotStarted(id, client, 0, provider, 0, [false, false]);
+			}).then(function() {
+				return dapp.confirm(id, {from: provider});
+			}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderConfirmed",
+					["orderID", "confirmer"],
+					[id, provider],
+					"Event LogOrderConfirmed should be fired"
+				);
+				return verifyOrderNotStarted(id, client, 0, provider, 0, [false, true]);
+			}).then(function() {
+				return dapp.confirm(id, {from: client}).then(assert.fail).catch(function(error) {
+					assertInvalid(error, "Invalid opcode due to lack of funds");
+					return verifyOrderNotStarted(id, client, 0, provider, 0, [false, true]);
+				});
+			});
+		}
+		
+		function providerProvider() {
+			return clientLedger.pending(provider).then(function(p) {
+				assert.equal(p, 0, "Provider should have no money on the client ledger");
+				return providerLedger.pending(provider);
+			}).then(function(p) {
+				assert.equal(p, 0, "Provider should have no money on the provider ledger");
+				return order(market_id, count, provider, stake, fee);
+			}).then(function(_id) {
+				id = _id;
+				return verifyOrderNotStarted(id, client, 0, provider, 0, [false, false]);
+			}).then(function() {
+				return dapp.confirm(id, {from: provider}).then(assert.fail).catch(function(error) {
+					assertInvalid(error, "Invalid opcode due to lack of funds");
+					return verifyOrderNotStarted(id, client, 0, provider, 0, [false, false]);
+				});
+			});
+		}
+		
+		return clientProvider().then(function() {
+			return providerProvider();
+		});
+		
+	});
+	
+	it("If order has not been confirmed, then the order should be cancellable without paying fee", function() {
+		var id;
+		var count = 1;
+		var stake = count*price*stakeRate;
+		var fee = count*price;
+		var deposit = 3*stake;
+		
+		return clientProvider().then(function() {
+			return providerProvider();
+		});
+		
+		function dep(client, provider) {
+			return dapp.depositClient({value: deposit, from: client}).then(function() {
+				return dapp.depositProvider({value: deposit, from: provider});
+			});
+		}
+		
+		function wit(client, provider) {
+			return dapp.withdrawClient({from: client}).then(function() {
+				return dapp.withdrawProvider({from: provider});
+			});
+		}
+		
+		function cancel(id, canceller, deposit, client, provider) {
+			return dapp.cancelOrder(id, {from: canceller}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderCancelled",
+					["orderID", "canceller"],
+					[id, canceller],
+					"Event LogOrderCancelled should be fired"
+				);
+				return book.exists(id)
+			}).then(function(e) {
+				assert.isFalse(e, "Order should no longer exist");
+				return book.active(id);
+			}).then(function(a) {
+				assert.isFalse(a, "Order should not be active");
+				return checkLedger(clientLedger, client, deposit, 0, 0);
+			}).then(function() {
+				return checkLedger(providerLedger, provider, deposit, 0, 0);
+			});
+		}
+		
+		function confirmOrder(id, confirmer) {
+			return dapp.confirm(id, {from: confirmer});
+		}
+		
+		function makeOrder(client, provider) {
+			return order(market_id, count, client, stake, fee).then(function(_id) {
+				id = _id;
+				return checkLedger(clientLedger, client, deposit, 0, 0);
+			}).then(function() {
+				return checkLedger(providerLedger, provider, deposit, 0, 0);
+			});
+		}
+		
+		function clientProvider() {
+			
+			console.log("Client - Provider");
+			
+			return noConfirm().then(function() {
+				return clientConfirm();
+			}).then(function() {
+				return providerConfirm;
+			});
+			
+			function noConfirm() {
+				console.log("Client - Provider : No confirmation");
+				
+				return dep(client, provider).then(function() {
+					return makeOrder(client, provider);
+				}).then(function() {
+					return cancel(id, client, deposit, client, provider);
+				}).then(function() {
+					return makeOrder(client, provider);
+				}).then(function() {
+					return cancel(id, provider, deposit, client, provider);
+				}).then(function() {
+					return wit(client,provider);
+				});
+			}
+			
+			function clientConfirm() {
+				console.log("Client - Provider : Client confirmation");
+				
+				return dep(client, provider).then(function() {
+					return makeOrder(client, provider);
+				}).then(function() {
+					return confirmOrder(id, provider);
+				}).then(function() {
+					return cancel(id, client, deposit, client, provider);
+				}).then(function() {
+					return makeOrder(client, provider);
+				}).then(function() {
+					return confirmOrder(id, provider);
+				}).then(function() {
+					return cancel(id, provider, deposit, client, provider);
+				}).then(function() {
+					return wit(client,provider);
+				});
+			}
+			
+			function providerConfirm() {
+				console.log("Client - Provider : Provider confirmation");
+				
+				return dep(client, provider).then(function() {
+					return makeOrder(client, provider);
+				}).then(function() {
+					return confirmOrder(id, provider);
+				}).then(function() {
+					return cancel(id, client, deposit, client, provider);
+				}).then(function() {
+					return makeOrder(client, provider);
+				}).then(function() {
+					return confirmOrder(id, provider);
+				}).then(function() {
+					return cancel(id, provider, deposit, client, provider);
+				}).then(function() {
+					return wit(client,provider);
+				});
+			}
+		}
+		
+		function providerProvider() {
+			
+			console.log("Provider - Provider");
+			
+			return noConfirm();
+			
+			function noConfirm() {
+				console.log("Provider - Provider : No confirmation");
+				
+				return dep(provider, provider).then(function() {
+					return makeOrder(provider, provider);
+				}).then(function() {
+					return cancel(id, provider, deposit, provider, provider);
+				}).then(function() {
+					return wit(provider,provider);
+				});
+			}
+			
+		}
+	});
+	
+	it("If confirmed, the client and provider should be able to provide readings, completing if matched", function() {
+		
+		var id;
+		var count = 1;
+		var stake = count*price*stakeRate;
+		var fee = count*price;
+		var deposit = 3*stake;
+		var reading = 10;
+		
+		return clientProvider().then(function() {
+			return providerProvider();
+		});
+		
+		function giveReading(id, reading, sender, expectedReading, expectedGiven) {
+			return dapp.completeOrder(id, reading, {from: sender}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderNewReading",
+					["orderID", "reading"],
+					[id, reading],
+					"Event LogOrderNewReading should be fired"
+				);
+				return book.readings(id);
+			}).then(function(r) {
+				assert.equal(r[0], expectedReading[0], "Readings should match");
+				assert.equal(r[1], expectedReading[1], "Readings should match");
+				return book.givenReadings(id);
+			}).then(function(g) {
+				assert.equal(g[0], expectedGiven[0], "Given should match");
+				assert.equal(g[1], expectedGiven[1], "Given should match");
+			});
+		}
+		
+		function giveReadingAndComplete(id, reading, sender, cost) {
+			return dapp.completeOrder(id, reading, {from: sender}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderNewReading",
+					["orderID", "reading"],
+					[id, reading],
+					"Event LogOrderNewReading should be fired"
+				);
+				assertUserEvent(
+					result,
+					"LogOrderFilled",
+					["orderID", "cost"],
+					[id, cost],
+					"Event LogOrderFilled should be fired"
+				);
+				return book.exists(id);
+			}).then(function(e) {
+				assert.isFalse(e, "Order should be filled and deleted");
+				return book.active(id);
+			}).then(function(a) {
+				assert.isFalse(a, "Order should be filled and inactive");
+			});
+		} 
+		
+		function clientProvider() {
+			return dep(client, provider, deposit).then(function() {
+				return dapp.order(market_id, count, {from: client});
+			}).then(function(result) {
+				id = fetchOrderID(result, "LogNewOrder", market_id);
+				return dapp.confirm(id, {from: client});
+			}).then(function() {
+				return dapp.confirm(id, {from: provider});
+			}).then(function() {
+				return book.active(id);
+			}).then(function(a) {
+				assert.isTrue(a, "Order should be confirmed");
+				return giveReading(id, reading, client, [reading, 0], [true, false]);
+			}).then(function() {
+				return giveReading(id, reading, client, [reading, 0], [true, false]);
+			}).then(function() {
+				return giveReading(id, reading+1, provider, [reading, reading+1], [true, true]);
+			}).then(function() {
+				return giveReadingAndComplete(id, reading, provider, fee);
+			}).then(function() {
+				return checkLedger(clientLedger, client, deposit-fee, 0, 0);
+			}).then(function() {
+				return checkLedger(providerLedger, provider, deposit+fee, 0, 0);
+			}).then(function() {
+				return wit(client, provider);
+			}).then(function() {
+				return dep(client, provider, deposit);
+			}).then(function() {
+				return dapp.order(market_id, count, {from: client});
+			}).then(function(result) {
+				id = fetchOrderID(result, "LogNewOrder", market_id);
+				return dapp.confirm(id, {from: client});
+			}).then(function() {
+				return dapp.confirm(id, {from: provider});
+			}).then(function() {
+				return book.active(id);
+			}).then(function(a) {
+				assert.isTrue(a, "Order should be confirmed");
+				return giveReading(id, reading, provider, [0, reading], [false, true]);
+			}).then(function() {
+				return giveReading(id, reading, provider, [0, reading], [false, true]);
+			}).then(function() {
+				return giveReading(id, reading+1, client, [reading+1, reading], [true, true]);
+			}).then(function() {
+				return giveReadingAndComplete(id, reading, client, fee);
+			}).then(function() {
+				return checkLedger(clientLedger, client, deposit-fee, 0, 0);
+			}).then(function() {
+				return checkLedger(providerLedger, provider, deposit+fee, 0, 0);
+			}).then(function() {
+				return wit(client, provider);
+			});
+		}
+		
+		function providerProvider() {
+			return dep(provider, provider, deposit).then(function() {
+				return dapp.order(market_id, count, {from: provider});
+			}).then(function(result) {
+				id = fetchOrderID(result, "LogNewOrder", market_id);
+				return dapp.confirm(id, {from: provider});
+			}).then(function() {
+				return book.active(id);
+			}).then(function(a) {
+				assert.isTrue(a, "Order should be confirmed");
+				return giveReadingAndComplete(id, reading, provider, fee);
+			}).then(function() {
+				return checkLedger(clientLedger, provider, deposit-fee, 0, 0);
+			}).then(function() {
+				return checkLedger(providerLedger, provider, deposit+fee, 0, 0);
+			}).then(function() {
+				return wit(provider, provider);
+			});
+		};
+	});
+	
+	it("At any time, if confirmed, the order can be cancelled unilaterally by paying a fee", function() {
+		
+		var id;
+		var count = 1;
+		var stake = count*price*stakeRate;
+		var fee = count*price;
+		var deposit = 3*stake;
+		var reading = 10;
+		
+		return clientProvider().then(function() {
+			return providerProvider();
+		});
+		
+		function uniCancel(client, provider, canceller) {
+			return dapp.cancelOrder(id, {from: canceller}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderCancelled",
+					["orderID", "canceller"],
+					[id, canceller],
+					"Event LogOrderCancelled should be fired"
+				);
+				return book.exists(id);
+			}).then(function(e) {
+				assert.isFalse(e, "Order should be cancelled");
+				return checkLedger(clientLedger, client, (canceller == client)?deposit-fee:deposit+fee, 0, 0);
+			}).then(function() {
+				return checkLedger(providerLedger, provider, (canceller == client)?deposit+fee:deposit-fee, 0, 0);
+			});
+		}
+		
+		function setup(client, provider) {
+			return dep(client, provider, deposit).then(function() {
+				return dapp.order(market_id, count, {from: client});
+			}).then(function(result) {
+				id = fetchOrderID(result, "LogNewOrder", market_id);
+				return dapp.confirm(id, {from: client});
+			}).then(function() {
+				return dapp.confirm(id, {from: provider});
+			}).then(function() {
+				return book.active(id);
+			}).then(function(a) {
+				assert.isTrue(a, "Order should be confirmed");
+			});
+		}
+		
+		function testNoReading(client, provider, canceller) {
+			return setup(client,provider).then(function() {
+				return uniCancel(client, provider, canceller);
+			}).then(function() {
+				return wit(client, provider);
+			});
+		}
+		
+		function testWithReading(client, provider, canceller, reader) {
+			return setup(client, provider).then(function() {
+				return dapp.completeOrder(id, reading, {from: reader});
+			}).then(function() {
+				return uniCancel(client, provider, canceller);
+			}).then(function() {
+				return wit(client, provider);
+			});
+		}
+		
+		function testWithDifferentReading(client, provider, canceller) {
+			return setup(client,provider).then(function() {
+				return dapp.completeOrder(id, reading, {from: client});
+			}).then(function() {
+				return dapp.completeOrder(id, reading+1, {from: provider});
+			}).then(function() {
+				return uniCancel(client, provider, canceller);
+			}).then(function() {
+				return wit(client, provider);
+			});
+		}
+		
+		function clientProvider() {
+			//No reading, client cancels
+			return testNoReading(client, provider, client).then(function() {
+				//No reading, provider cancels
+				return testNoReading(client, provider, provider);
+			}).then(function() {
+				//Client reading, client cancels
+				return testWithReading(client, provider, client, client);
+			}).then(function() {
+				//Client reading, provider cancels
+				return testWithReading(client, provider, provider, client);
+			}).then(function() {
+				//Provider reading, client cancels
+				return testWithReading(client, provider, client, provider);
+			}).then(function() {
+				//Provider reading, provider cancels
+				return testWithReading(client, provider, provider, provider);
+			}).then(function() {
+				//Different readings, client cancels
+				return testWithDifferentReading(client, provider, client);
+			}).then(function() {
+				//Different readings, provider cancels
+				return testWithDifferentReading(client, provider, provider);
+			});
+		}
+		
+		function providerProvider() {
+			return dep(provider, provider, deposit).then(function() {
+				return dapp.order(market_id, count, {from: provider});
+			}).then(function(result) {
+				id = fetchOrderID(result, "LogNewOrder", market_id);
+				return dapp.confirm(id, {from: provider});
+			}).then(function() {
+				return book.active(id);
+			}).then(function(a) {
+				assert.isTrue(a, "Order should be confirmed");
+				return dapp.cancelOrder(id, {from: provider});
+			}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderCancelled",
+					["orderID", "canceller"],
+					[id, provider],
+					"Event LogOrderCancelled should be fired"
+				);
+				return book.exists(id);
+			}).then(function(e) {
+				assert.isFalse(e, "Order should be cancelled");
+				return checkLedger(clientLedger, provider, deposit+fee, 0, 0);
+			}).then(function() {
+				return checkLedger(providerLedger, provider, deposit-fee, 0, 0);
+			}).then(function() {
+				return wit(provider, provider);
+			});
+		};
+	});
+	
+	it("If market has shutdown during confirmed order, the provider pays the cancellation fee", function() {
+		var market;
+		var id;
+		var count = 1;
+		var stake = count*price*stakeRate;
+		var fee = count*price;
+		var deposit = 3*stake;
+		var reading = 10;
+		
+		return clientProvider().then(function() {
+			return providerProvider();
+		});
+		
+		function createMarket() {
+			return dapp.addMarket(price, minStake, stakeRate, 0, {from: provider}).then(function(result) {
+				market = fetchID(result, "LogNewMarket");
+			});
+		}
+		
+		function setup(client, provider) {
+			return createMarket().then(function() {
+				return dep(client, provider, deposit);
+			}).then(function() {
+				return dapp.order(market, count, {from: client});
+			}).then(function(result) {
+				id = fetchOrderID(result, "LogNewOrder", market);
+				return dapp.confirm(id, {from: client});
+			}).then(function() {
+				return dapp.confirm(id, {from: provider});
+			}).then(function() {
+				return book.active(id);
+			}).then(function(a) {
+				assert.isTrue(a, "Order should be active");
+			});
+		}
+		
+		function shutdown() {
+			return dapp.shutdownMarket(market, {from: provider}).then(function() {
+				return register.active(market);
+			}).then(function(a) {
+				assert.isFalse(a, "Market should not be active");
+			});
+		}
+		
+		function cancel(canceller) {
+			return dapp.cancelOrder(id, {from: canceller}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderCancelled",
+					["orderID", "canceller"],
+					[id, provider],
+					"Event LogOrderCancelled should be fired"
+				);
+				return book.exists(id);
+			}).then(function(e) {
+				assert.isFalse(e, "Order should be cancelled");
+			});
+		}
+		
+		function tearDown(client, provider) {
+			return checkLedger(clientLedger, client, deposit+fee, 0, 0).then(function() {
+				return checkLedger(providerLedger, provider, deposit-fee, 0, 0);
+			}).then(function() {
+				return wit(client, provider);
+			});
+		}
+		
+		function testNoReading(client, provider, canceller) {
+			return setup(client, provider).then(function() {
+				return shutdown();
+			}).then(function() {
+				return cancel(canceller);
+			}).then(function() {
+				return tearDown(client, provider);
+			});
+		}
+		
+		function testWithReading(client, provider, canceller, reader) {
+			return setup(client, provider).then(function() {
+				return dapp.completeOrder(id, reading, {from: reader});
+			}).then(function() {
+				return shutdown();
+			}).then(function() {
+				return cancel(canceller);
+			}).then(function() {
+				return tearDown(client, provider);
+			});
+		}
+		
+		function testWithDifferentReading(client, provider, canceller) {
+			return setup(client, provider).then(function() {
+				return dapp.completeOrder(id, reading, {from: client});
+			}).then(function() {
+				return dapp.completeOrder(id, reading+1, {from: provider});
+			}).then(function() {
+				return shutdown();
+			}).then(function() {
+				return cancel(canceller);
+			}).then(function() {
+				return tearDown(client, provider);
+			});
+		}
+		
+		function clientProvider() { //1363
+			//No reading - client cancels
+			return testNoReading(client, provider, client).then(function() {
+				//No reading - provider cancels
+				return testNoReading(client, provider, provider);
+			}).then(function() {
+				//Client reading - client cancels
+				return testWithReading(client, provider, client, client);
+			}).then(function() {
+				//Client reading - provider cancels
+				return testWithReading(client, provider, provider, client);
+			}).then(function() {
+				//Provider reading - client cancels
+				return testWithReading(client, provider, client, provider);
+			}).then(function() {
+				//Provider reading - provider cancels
+				return testWithReading(client, provider, provider, provider);
+			}).then(function() {
+				//Different reading - client cancels
+				return testWithDifferentReading(client, provider, client);
+			}).then(function() {
+				//Different reading - provider cancels
+				return testWithDifferentReading(client, provider, provider);
+			});
+		}
+		
+		function providerProvider() {
+			//No reading - cancel
+			return createMarket().then(function() {
+				return dep(provider, provider, deposit);
+			}).then(function() {
+				return dapp.order(market, count, {from: provider});
+			}).then(function(result) {
+				id = fetchOrderID(result, "LogNewOrder", market);
+				return dapp.confirm(id, {from: provider});
+			}).then(function() {
+				return book.active(id);
+			}).then(function(a) {
+				assert.isTrue(a, "Order should be active");
+			}).then(function() {
+				return shutdown();
+			}).then(function() {
+				return cancel(provider);
+			}).then(function() {
+				return tearDown(provider, provider);
+			});
+		}
+	});
+	
+	it("If confirmed, the client and provider can agree to cancel bilaterally, waiving the fee", function() {
+		var id;
+		var count = 1;
+		var stake = count*price*stakeRate;
+		var fee = count*price;
+		var deposit = 3*stake;
+		var reading = 10;
+		
+		return clientProvider().then(function() {
+			return providerProvider();
+		});
+		
+		function setup(client, provider) {
+			return dep(client, provider, deposit).then(function() {
+				return dapp.order(market_id, count, {from: client});
+			}).then(function(result) {
+				id = fetchOrderID(result, "LogNewOrder", market_id);
+				return dapp.confirm(id, {from: client});
+			}).then(function() {
+				return dapp.confirm(id, {from: provider});
+			}).then(function() {
+				return book.active(id);
+			}).then(function(a) {
+				assert.isTrue(a, "Order should be active");
+			});
+		}
+		
+		function cancel(canceller) {
+			return dapp.bilateralCancelOrder(id, {from: canceller}).then(function(result) {
+				assertUserEvent(
+					result,
+					"LogOrderBilateralSought",
+					["orderID", "seeker"],
+					[id, canceller],
+					"Event LogOrderBilateralSought should be fired"
+				);
+				return result;
+			});				
+		}
+		
+		function verifyCancel(result) {
 			assertUserEvent(
 				result,
-				"LogOrderConfirmed",
-				["orderID", "confirmer"],
-				[id, client],
-				"Event LogOrderConfirmed should be fired"
-			);
-			return verifyOrderNotStarted(
-				id,
-				client,
-				deposit,
-				provider,
-				deposit,
-				[true, false]
-			);
-		}).then(function() {			
-			return dapp.confirm(id, {from: provider});
-		}).then(function(result) {
-			assertUserEvent(
-				result,
-				"LogOrderConfirmed",
-				["orderID", "confirmer"],
-				[id, provider],
-				"Event LogOrderConfirmed should be fired"
-			);
-			assertUserEvent(
-				result,
-				"LogOrderActivated",
+				"LogOrderBilateralCancel",
 				["orderID"],
 				[id],
-				"Event LogOrderActivated should be fired"
+				"Event LogOrderBilateralCancel should be fired"
 			);
-			return verifyOrderStarted(
-				id,
-				client,
-				deposit,
-				provider,
-				deposit,
-				stake,
-				fee
-			);
-		}).then(function() {
-			return clientLedger.pending(client);
-		}).then(function(p) {
-			final_client = p;
-			return providerLedger.pending(provider);
-		}).then(function(p) {
-			final_provider = p;
-			assert.equal(final_client, init_client-stake, "Stake should be locked");
-			assert.equal(final_provider, init_provider-stake, "Stake should be locked");
-		});
+			return book.exists(id).then(function(e) {
+				assert.isFalse(e, "Order should be cancelled");
+			});
+		}
+		
+		function tearDown(client, provider) {
+			return checkLedger(clientLedger, client, deposit, 0, 0).then(function() {
+				return checkLedger(providerLedger, provider, deposit, 0, 0);
+			}).then(function() {
+				return wit(client, provider);
+			});
+		}
+		
+		function testNoReading(client, provider, first, second) {
+			return setup(client, provider).then(function() {
+				return cancel(first);
+			}).then(function() {
+				return cancel(second);
+			}).then(function(result) {
+				return verifyCancel(result);
+			}).then(function() {
+				return tearDown(client, provider);
+			});
+		}
+		
+		function testWithReading(client, provider, first, second, reader) {
+			return setup(client, provider).then(function() {
+				return dapp.completeOrder(id, reading, {from: reader});
+			}).then(function() {
+				return cancel(first);
+			}).then(function() {
+				return cancel(second);
+			}).then(function(result) {
+				return verifyCancel(result);
+			}).then(function() {
+				return tearDown(client, provider);
+			});
+		}
+		
+		function testWithDifferentReading(client, provider, first, second) {
+			return setup(client, provider).then(function() {
+				return dapp.completeOrder(id, reading, {from: client});
+			}).then(function() {
+				return dapp.completeOrder(id, reading+1, {from: provider});
+			}).then(function() {
+				return cancel(first);
+			}).then(function() {
+				return cancel(second);
+			}).then(function(result) {
+				return verifyCancel(result);
+			}).then(function() {
+				return tearDown(client, provider);
+			});
+		}
+		
+		function clientProvider() {
+			//No reading - client first
+			return testNoReading(client, provider, client, provider).then(function() {
+				//No reading - provider first
+				return testNoReading(client, provider, provider, client);
+			}).then(function() {
+				//Client reading - provider first
+				return testWithReading(client, provider, provider, client, client);
+			}).then(function() {
+				//Client reading - client first
+				return testWithReading(client, provider, client, provider, client);
+			}).then(function() {
+				//Provider reading - client first
+				return testWithReading(client, provider, client, provider, provider);
+			}).then(function() {
+				//Provider reading - provider first
+				return testWithReading(client, provider, provider, client, provider);
+			}).then(function() {
+				//Different reading - provider first
+				return testWithDifferentReading(client, provider, provider, client);
+			}).then(function() {
+				//Different reading - client first
+				return testWithDifferentReading(client, provider, client, provider);
+			});
+		}
+		
+		function providerProvider() {
+			//No reading
+			return dep(provider, provider, deposit).then(function() {
+				return dapp.order(market_id, count, {from: provider});
+			}).then(function(result) {
+				id = fetchOrderID(result, "LogNewOrder", market_id);
+				return dapp.confirm(id, {from: provider});
+			}).then(function() {
+				return book.active(id);
+			}).then(function(a) {
+				assert.isTrue(a, "Order should be active");
+			}).then(function() {
+				return cancel(provider);
+			}).then(function(result) {
+				return verifyCancel(result);
+			}).then(function() {
+				return tearDown(provider, provider);
+			});
+		}
 	});
-	it("Given lack of funds, order should not be confirmable");
-	it("If order has not been confirmed, then the order should be cancellable without paying fee");
-	it("If confirmed, the order is now active");
-	it("If confirmed, the client and provider should be able to provide readings");
-	it("If the readings match, the order should be filled");
-	it("At any time, if confirmed, the order can be cancelled unilaterally by paying a fee");
-	it("If confirmed, the client and provider can agree to cancel bilaterally, waiving the fee");
+	
+	it("Third parties should have no control access to orders");
+	it("No action can be taken on orders that don't exist, without creating one")
 	
 })
