@@ -9,7 +9,7 @@ function assertUserEvent(result, event_id, fields, values, message) {
 	for(var i = 0; i < result.logs.length; i++) {
 		var log = result.logs[i];
 		if (log.event === event_id) {
-			console.log(log.args);
+			//console.log(log.args);
 			event_occurred = true;
 			for(var i=0; i < fields.length; i++) {
 				event_occurred = event_occurred &&
@@ -178,7 +178,7 @@ contract('TestMarketStakeLedger', function(accounts) {
 			return dapp.depositClient({value: amount});
 		}).then(function() {
 			init_balance = dapp.contract._eth.getBalance(dapp.address).toNumber();
-			console.log(init_balance);
+			//console.log(init_balance);
 			//assert.equal(init_balance, amount, amount + " should have been added.");
 			//As of TestRPC 4.0.1, this fails due to library calls from payable contract tx spends
 			//sent amount multiple times
@@ -196,7 +196,7 @@ contract('TestMarketStakeLedger', function(accounts) {
 				"Event WithdrawClient should be fired"
 			);
 			final_balance = dapp.contract._eth.getBalance(dapp.address).toNumber();
-			console.log(final_balance);
+			//console.log(final_balance);
 			//assert.equal(final_balance, init_balance - amount, amount + " should have been withdrawn");
 			//assert.equal(final_balance, 0, " Contract should be empty");
 			//As of TestRPC 4.0.1, this fails due to previous deposit having deposited twice.
@@ -220,7 +220,7 @@ contract('TestMarketStakeLedger', function(accounts) {
 			return dapp.depositProvider({value: amount});
 		}).then(function() {
 			init_balance = dapp.contract._eth.getBalance(dapp.address).toNumber();
-			console.log(init_balance);
+			//console.log(init_balance);
 			//assert.equal(init_balance, amount, amount + " should have been added.");
 			//As of TestRPC 4.0.1, this fails due to library calls from payable contract tx spends
 			//sent amount multiple times
@@ -238,7 +238,7 @@ contract('TestMarketStakeLedger', function(accounts) {
 				"Event WithdrawProvider should be fired"
 			);
 			final_balance = dapp.contract._eth.getBalance(dapp.address).toNumber();
-			console.log(final_balance);
+			//console.log(final_balance);
 			//assert.equal(final_balance, init_balance - amount, amount + " should have been withdrawn");
 			//assert.equal(final_balance, 0, " Contract should be empty");
 			//As of TestRPC 4.0.1, this fails due to previous deposit having deposited twice.

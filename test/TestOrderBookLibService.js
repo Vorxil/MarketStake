@@ -1,6 +1,6 @@
 var Ledger = artifacts.require("Ledger");
-var ProductRegister = artifacts.require("MarketRegister");
-var ProductOrderBook = artifacts.require("ProductOrderBook");
+var ServiceRegister = artifacts.require("ServiceRegister");
+var ServiceOrderBook = artifacts.require("ServiceOrderBook");
 var MarketStake = artifacts.require("MarketStake");
 
 function assertEvent(result, event_id, id, message) {
@@ -87,7 +87,7 @@ function fetchOrderID(result, eventName, market) {
 }
 
 //TODO: Reorganize, test basic functionality first, then assume correctness.
-contract("TestProductOrderBook", function() {
+contract("TestServiceOrderBook", function() {
 	
 	var dapp;
 	var clientLedger;
@@ -105,6 +105,7 @@ contract("TestProductOrderBook", function() {
 	var price = 10;
 	var stakeRate = 2;
 	var minStake = 25;
+	var tolerance = 10;
 	
 	beforeEach(function() {
 		return Ledger.new().then(function(instance) {
@@ -112,10 +113,10 @@ contract("TestProductOrderBook", function() {
 			return Ledger.new();
 		}).then(function(instance) {
 			providerLedger = instance;
-			return ProductRegister.new();
+			return ServiceRegister.new();
 		}).then(function(instance) {
 			register = instance;
-			return ProductOrderBook.new();
+			return ServiceOrderBook.new();
 		}).then(function(instance) {
 			book = instance;
 			return MarketStake.new(
@@ -153,11 +154,11 @@ contract("TestProductOrderBook", function() {
 			assert.isTrue(b[0], "Dapp should be allowed on order book");
 			return register.isMetered();
 		}).then(function(b) {
-			assert.isFalse(b, "Register should not be metered");
+			assert.isTrue(b, "Register should be metered");
 			return book.isMetered();
 		}).then(function(b) {
-			assert.isFalse(b, "Order book should not be metered");
-			return dapp.addMarket(price, minStake, stakeRate, 0, {from: provider});
+			assert.isTrue(b, "Order book should be metered");
+			return dapp.addMarket(price, minStake, stakeRate, tolerance, {from: provider});
 		}).then(function(result) {
 			market_id = fetchID(result, "LogNewMarket");
 			return register.exists(market_id);
@@ -181,17 +182,17 @@ contract("TestProductOrderBook", function() {
 		});
 	}
 	
-	function order(market, count, sender, expectedStake, expectedFee) {
+	function order(market, amount, sender, expectedStake, expectedFee) {
 		var id;
 		
 		function worker() {
-			return dapp.order(market, count, {from: sender}).then(function(result) {
+			return dapp.order(market, amount, {from: sender}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market);
 				assertUserEvent(
 					result,
 					"LogNewOrder",
 					["marketID", "orderID", "price", "amount", "stake"],
-					[market_id, id, price, count, expectedStake],
+					[market_id, id, price, amount, expectedStake],
 					"Event LogNewOrder should be fired"
 				);
 				return book.exists(id);
@@ -215,9 +216,6 @@ contract("TestProductOrderBook", function() {
 				return book.fee(id);
 			}).then(function(f) {
 				assert.equal(f, expectedFee, "Fee should match expected");
-				return book.count(id);
-			}).then(function(c) {
-				assert.equal(c, count, "Count should match");
 			});
 		}
 		
@@ -264,11 +262,11 @@ contract("TestProductOrderBook", function() {
 	
 	it("Should be able to make an order", function() {
 		var id;
-		var count = 1;
-		var expectedStake = count*price*stakeRate;
-		var expectedFee = count*price;
+		var amount = 1000;
+		var expectedStake = amount*stakeRate;
+		var expectedFee = amount;
 		
-		return order(market_id, count, client, expectedStake, expectedFee).then(function(_id) {
+		return order(market_id, amount, client, expectedStake, expectedFee).then(function(_id) {
 			id = _id;
 			//console.log(id);
 		});
@@ -276,27 +274,11 @@ contract("TestProductOrderBook", function() {
 	
 	it("The provider should be able to make an order on its own market", function() {
 		var id;
-		var count = 1;
-		var expectedStake = count*price*stakeRate;
-		var expectedFee = count*price;
+		var amount = 1000;
+		var expectedStake = amount*stakeRate;
+		var expectedFee = amount;
 		
-		return order(market_id, count, provider, expectedStake, expectedFee).then(function(_id) {
-			id = _id;
-			//console.log(id);
-		});
-	});
-	
-	it("Should be able to make an order for more than one non-metered goods", function() {
-		var id;
-		var count = 5;
-		var expectedStake = count*price*stakeRate;
-		var expectedFee = count*price;
-		
-		return order(market_id, count, client, expectedStake, expectedFee).then(function(_id) {
-			id = _id;
-			//console.log(id);
-			return order(market_id, count, provider, expectedStake, expectedFee);
-		}).then(function(_id) {
+		return order(market_id, amount, provider, expectedStake, expectedFee).then(function(_id) {
 			id = _id;
 			//console.log(id);
 		});
@@ -304,20 +286,20 @@ contract("TestProductOrderBook", function() {
 	
 	it("Should not make orders that can overflow stake", function() {
 		var id;
-		var count = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-		var expectedStake = count*price*stakeRate;
-		var expectedFee = count*price;
+		var amount = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+		var expectedStake = amount*stakeRate;
+		var expectedFee = amount;
 		
-		return order(market_id, count, client, expectedStake, expectedFee).then(assert.fail).catch(function(error) {
+		return order(market_id, amount, client, expectedStake, expectedFee).then(assert.fail).catch(function(error) {
 			assertInvalid(error, "Should be invalid opcode because overflow");
 		});
 	});
 	
 	it("Given funds have been deposited, client and provider should be able to confirm order", function() {
 		var id;
-		var count = 1;
-		var stake = count*price*stakeRate;
-		var fee = count*price;
+		var amount = 1000;
+		var stake = amount*stakeRate;
+		var fee = amount;
 		var deposit = 3*stake;
 		
 		var init_client;
@@ -326,7 +308,7 @@ contract("TestProductOrderBook", function() {
 		var final_provider;
 		
 		function clientProvider() {
-			return order(market_id, count, client, stake, fee).then(function(_id) {
+			return order(market_id, amount, client, stake, fee).then(function(_id) {
 				id = _id;
 				//console.log(id);
 				return dapp.depositClient({value: deposit, from: client});
@@ -395,7 +377,7 @@ contract("TestProductOrderBook", function() {
 		}
 		
 		function providerProvider() {
-			return order(market_id, count, provider, stake, fee).then(function(_id) {
+			return order(market_id, amount, provider, stake, fee).then(function(_id) {
 				id = _id;
 				init_provider = final_provider;
 				return dapp.depositClient({value: deposit, from: provider});
@@ -451,9 +433,9 @@ contract("TestProductOrderBook", function() {
 	
 	it("Given lack of funds, order should not be confirmable", function() {
 		var id;
-		var count = 1;
-		var stake = count*price*stakeRate;
-		var fee = count*price;		
+		var amount = 1000;
+		var stake = amount*stakeRate;
+		var fee = amount;
 		
 		function clientProvider() {
 			return clientLedger.pending(client).then(function(p) {
@@ -461,7 +443,7 @@ contract("TestProductOrderBook", function() {
 				return providerLedger.pending(provider);
 			}).then(function(p) {
 				assert.equal(p, 0, "Provider should have no money on the ledger");
-				return order(market_id, count, client, stake, fee);
+				return order(market_id, amount, client, stake, fee);
 			}).then(function(_id) {
 				id = _id;
 				return verifyOrderNotStarted(id, client, 0, provider, 0, [false, false]);
@@ -482,7 +464,7 @@ contract("TestProductOrderBook", function() {
 					return verifyOrderNotStarted(id, client, 0, provider, 0, [true, false]);
 				});
 			}).then(function() {
-				return order(market_id, count, client, stake, fee);
+				return order(market_id, amount, client, stake, fee);
 			}).then(function(_id) {
 				id = _id;
 				return verifyOrderNotStarted(id, client, 0, provider, 0, [false, false]);
@@ -511,7 +493,7 @@ contract("TestProductOrderBook", function() {
 				return providerLedger.pending(provider);
 			}).then(function(p) {
 				assert.equal(p, 0, "Provider should have no money on the provider ledger");
-				return order(market_id, count, provider, stake, fee);
+				return order(market_id, amount, provider, stake, fee);
 			}).then(function(_id) {
 				id = _id;
 				return verifyOrderNotStarted(id, client, 0, provider, 0, [false, false]);
@@ -531,9 +513,9 @@ contract("TestProductOrderBook", function() {
 	
 	it("If order has not been confirmed, then the order should be cancellable without paying fee", function() {
 		var id;
-		var count = 1;
-		var stake = count*price*stakeRate;
-		var fee = count*price;
+		var amount = 1000;
+		var stake = amount*stakeRate;
+		var fee = amount;
 		var deposit = 3*stake;
 		
 		return clientProvider().then(function() {
@@ -578,7 +560,7 @@ contract("TestProductOrderBook", function() {
 		}
 		
 		function makeOrder(client, provider) {
-			return order(market_id, count, client, stake, fee).then(function(_id) {
+			return order(market_id, amount, client, stake, fee).then(function(_id) {
 				id = _id;
 				return checkLedger(clientLedger, client, deposit, 0, 0);
 			}).then(function() {
@@ -674,12 +656,17 @@ contract("TestProductOrderBook", function() {
 		}
 	});
 	
+	function avg(a, b) {
+		return (a >>> 1) + (b >>> 1) + (a & b & 1);
+	}
+	
 	it("If confirmed, the client and provider should be able to provide readings, completing if matched", function() {
 		
 		var id;
-		var count = 1;
-		var stake = count*price*stakeRate;
-		var fee = count*price;
+		var amount = 1000;
+		var stake = amount*stakeRate;
+		var fee = amount;
+		var cost;
 		var deposit = 3*stake;
 		var reading = 10;
 		
@@ -734,7 +721,7 @@ contract("TestProductOrderBook", function() {
 		
 		function clientProvider() {
 			return dep(client, provider, deposit).then(function() {
-				return dapp.order(market_id, count, {from: client});
+				return dapp.order(market_id, amount, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: client});
@@ -748,19 +735,20 @@ contract("TestProductOrderBook", function() {
 			}).then(function() {
 				return giveReading(id, reading, client, [reading, 0], [true, false]);
 			}).then(function() {
-				return giveReading(id, reading+1, provider, [reading, reading+1], [true, true]);
+				return giveReading(id, reading+20, provider, [reading, reading+20], [true, true]);
 			}).then(function() {
-				return giveReadingAndComplete(id, reading, provider, fee);
+				cost = price*avg(reading, reading+5);
+				return giveReadingAndComplete(id, reading+5, provider, cost);
 			}).then(function() {
-				return checkLedger(clientLedger, client, deposit-fee, 0, 0);
+				return checkLedger(clientLedger, client, deposit-cost, 0, 0);
 			}).then(function() {
-				return checkLedger(providerLedger, provider, deposit+fee, 0, 0);
+				return checkLedger(providerLedger, provider, deposit+cost, 0, 0);
 			}).then(function() {
 				return wit(client, provider);
 			}).then(function() {
 				return dep(client, provider, deposit);
 			}).then(function() {
-				return dapp.order(market_id, count, {from: client});
+				return dapp.order(market_id, amount, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: client});
@@ -774,13 +762,13 @@ contract("TestProductOrderBook", function() {
 			}).then(function() {
 				return giveReading(id, reading, provider, [0, reading], [false, true]);
 			}).then(function() {
-				return giveReading(id, reading+1, client, [reading+1, reading], [true, true]);
+				return giveReading(id, reading+20, client, [reading+20, reading], [true, true]);
 			}).then(function() {
-				return giveReadingAndComplete(id, reading, client, fee);
+				return giveReadingAndComplete(id, reading+5, client, cost);
 			}).then(function() {
-				return checkLedger(clientLedger, client, deposit-fee, 0, 0);
+				return checkLedger(clientLedger, client, deposit-cost, 0, 0);
 			}).then(function() {
-				return checkLedger(providerLedger, provider, deposit+fee, 0, 0);
+				return checkLedger(providerLedger, provider, deposit+cost, 0, 0);
 			}).then(function() {
 				return wit(client, provider);
 			});
@@ -788,7 +776,7 @@ contract("TestProductOrderBook", function() {
 		
 		function providerProvider() {
 			return dep(provider, provider, deposit).then(function() {
-				return dapp.order(market_id, count, {from: provider});
+				return dapp.order(market_id, amount, {from: provider});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: provider});
@@ -796,11 +784,12 @@ contract("TestProductOrderBook", function() {
 				return book.active(id);
 			}).then(function(a) {
 				assert.isTrue(a, "Order should be confirmed");
-				return giveReadingAndComplete(id, reading, provider, fee);
+				cost = price*reading;
+				return giveReadingAndComplete(id, reading, provider, cost);
 			}).then(function() {
-				return checkLedger(clientLedger, provider, deposit-fee, 0, 0);
+				return checkLedger(clientLedger, provider, deposit-cost, 0, 0);
 			}).then(function() {
-				return checkLedger(providerLedger, provider, deposit+fee, 0, 0);
+				return checkLedger(providerLedger, provider, deposit+cost, 0, 0);
 			}).then(function() {
 				return wit(provider, provider);
 			});
@@ -810,9 +799,9 @@ contract("TestProductOrderBook", function() {
 	it("At any time, if confirmed, the order can be cancelled unilaterally by paying a fee", function() {
 		
 		var id;
-		var count = 1;
-		var stake = count*price*stakeRate;
-		var fee = count*price;
+		var amount = 1000;
+		var stake = amount*stakeRate;
+		var fee = amount;
 		var deposit = 3*stake;
 		var reading = 10;
 		
@@ -840,7 +829,7 @@ contract("TestProductOrderBook", function() {
 		
 		function setup(client, provider) {
 			return dep(client, provider, deposit).then(function() {
-				return dapp.order(market_id, count, {from: client});
+				return dapp.order(market_id, amount, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: client});
@@ -875,7 +864,7 @@ contract("TestProductOrderBook", function() {
 			return setup(client,provider).then(function() {
 				return dapp.completeOrder(id, reading, {from: client});
 			}).then(function() {
-				return dapp.completeOrder(id, reading+1, {from: provider});
+				return dapp.completeOrder(id, reading+20, {from: provider});
 			}).then(function() {
 				return uniCancel(client, provider, canceller);
 			}).then(function() {
@@ -911,7 +900,7 @@ contract("TestProductOrderBook", function() {
 		
 		function providerProvider() {
 			return dep(provider, provider, deposit).then(function() {
-				return dapp.order(market_id, count, {from: provider});
+				return dapp.order(market_id, amount, {from: provider});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: provider});
@@ -943,9 +932,9 @@ contract("TestProductOrderBook", function() {
 	it("If market has shutdown during confirmed order, the provider pays the cancellation fee", function() {
 		var market;
 		var id;
-		var count = 1;
-		var stake = count*price*stakeRate;
-		var fee = count*price;
+		var amount = 1000;
+		var stake = amount*stakeRate;
+		var fee = amount;
 		var deposit = 3*stake;
 		var reading = 10;
 		
@@ -954,7 +943,7 @@ contract("TestProductOrderBook", function() {
 		});
 		
 		function createMarket() {
-			return dapp.addMarket(price, minStake, stakeRate, 0, {from: provider}).then(function(result) {
+			return dapp.addMarket(price, minStake, stakeRate, tolerance, {from: provider}).then(function(result) {
 				market = fetchID(result, "LogNewMarket");
 			});
 		}
@@ -963,7 +952,7 @@ contract("TestProductOrderBook", function() {
 			return createMarket().then(function() {
 				return dep(client, provider, deposit);
 			}).then(function() {
-				return dapp.order(market, count, {from: client});
+				return dapp.order(market, amount, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market);
 				return dapp.confirm(id, {from: client});
@@ -1033,7 +1022,7 @@ contract("TestProductOrderBook", function() {
 			return setup(client, provider).then(function() {
 				return dapp.completeOrder(id, reading, {from: client});
 			}).then(function() {
-				return dapp.completeOrder(id, reading+1, {from: provider});
+				return dapp.completeOrder(id, reading+20, {from: provider});
 			}).then(function() {
 				return shutdown();
 			}).then(function() {
@@ -1074,7 +1063,7 @@ contract("TestProductOrderBook", function() {
 			return createMarket().then(function() {
 				return dep(provider, provider, deposit);
 			}).then(function() {
-				return dapp.order(market, count, {from: provider});
+				return dapp.order(market, amount, {from: provider});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market);
 				return dapp.confirm(id, {from: provider});
@@ -1094,9 +1083,9 @@ contract("TestProductOrderBook", function() {
 	
 	it("If confirmed, the client and provider can agree to cancel bilaterally, waiving the fee", function() {
 		var id;
-		var count = 1;
-		var stake = count*price*stakeRate;
-		var fee = count*price;
+		var amount = 1000;
+		var stake = amount*stakeRate;
+		var fee = amount;
 		var deposit = 3*stake;
 		var reading = 10;
 		
@@ -1106,7 +1095,7 @@ contract("TestProductOrderBook", function() {
 		
 		function setup(client, provider) {
 			return dep(client, provider, deposit).then(function() {
-				return dapp.order(market_id, count, {from: client});
+				return dapp.order(market_id, amount, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: client});
@@ -1183,7 +1172,7 @@ contract("TestProductOrderBook", function() {
 			return setup(client, provider).then(function() {
 				return dapp.completeOrder(id, reading, {from: client});
 			}).then(function() {
-				return dapp.completeOrder(id, reading+1, {from: provider});
+				return dapp.completeOrder(id, reading+20, {from: provider});
 			}).then(function() {
 				return cancel(first);
 			}).then(function() {
@@ -1224,7 +1213,7 @@ contract("TestProductOrderBook", function() {
 		function providerProvider() {
 			//No reading
 			return dep(provider, provider, deposit).then(function() {
-				return dapp.order(market_id, count, {from: provider});
+				return dapp.order(market_id, amount, {from: provider});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: provider});
@@ -1244,11 +1233,12 @@ contract("TestProductOrderBook", function() {
 	
 	it("Third parties should have no control access to orders", function() {
 		var id;
-		var count = 1;
-		var stake = count*price*stakeRate;
-		var fee = count*price;
+		var amount = 1000;
+		var stake = amount*stakeRate;
+		var fee = amount;
 		var deposit = 3*stake;
 		var reading = 10;
+		var cost = reading*price;
 		
 		return clientProvider().then(function() {
 			return providerProvider();
@@ -1256,7 +1246,7 @@ contract("TestProductOrderBook", function() {
 		
 		function setup(client, provider) {
 			return dep(client, provider, deposit).then(function() {
-				return dapp.order(market_id, count, {from: client});
+				return dapp.order(market_id, amount, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 			});
@@ -1358,9 +1348,9 @@ contract("TestProductOrderBook", function() {
 			}).then(function() {
 				return testThirdParty();
 			}).then(function() {
-				return checkLedger(clientLedger, client, deposit-fee, 0, 0);
+				return checkLedger(clientLedger, client, deposit-cost, 0, 0);
 			}).then(function() {
-				return checkLedger(providerLedger, provider, deposit+fee, 0, 0);
+				return checkLedger(providerLedger, provider, deposit+cost, 0, 0);
 			}).then(function() {
 				return wit(client, provider);
 			}).then(function() {
@@ -1433,9 +1423,9 @@ contract("TestProductOrderBook", function() {
 			}).then(function() {
 				return complete(provider);
 			}).then(function() {
-				return checkLedger(clientLedger, provider, deposit-fee, 0, 0);
+				return checkLedger(clientLedger, provider, deposit-cost, 0, 0);
 			}).then(function() {
-				return checkLedger(providerLedger, provider, deposit+fee, 0, 0);
+				return checkLedger(providerLedger, provider, deposit+cost, 0, 0);
 			}).then(function() {
 				return wit(provider, provider);
 			});			
