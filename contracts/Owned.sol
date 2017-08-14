@@ -60,11 +60,11 @@ contract Allowable is Owned {
 	}
 }
 
-/*contract Upgradeable is Owned {
+contract Upgradeable is Owned {
     
-    address upgradeTo = address(0);
-    uint upgradeTimeBlocks = 0;
-    bool scheduled = false;
+    address public upgradeTo = address(0);
+    uint public upgradeTimeBlocks = 0;
+    bool public scheduled = false;
     
     event LogUpgradeScheduled(
         address _upgradeTo,
@@ -74,23 +74,24 @@ contract Allowable is Owned {
         uint scheduledBlock
     );
     event LogUpgraded(address to, uint time);
+	event LogUpgradeCancelled(address to, uint time);
     
     function scheduleUpgrade(
         address _upgradeTo,
         string sourceCodeAt,
         string compileOpts,
         bytes32 sha3Hash,
-        uint daysAhead
+        uint blocksAhead
     )
     external
     onlyOwner
     {
         require(!scheduled);
         require(_upgradeTo != address(0));
-        require(daysAhead >= (2 weeks));
+        require(blocksAhead >= ((2 weeks)/(5 seconds)));
         
         upgradeTo = _upgradeTo;
-        upgradeTimeBlocks = block.number + (daysAhead * (1 days))/(5 seconds);
+        upgradeTimeBlocks = block.number + blocksAhead;
         scheduled = true;
         
         LogUpgradeScheduled(_upgradeTo, sourceCodeAt, compileOpts, sha3Hash, upgradeTimeBlocks);
@@ -106,4 +107,16 @@ contract Allowable is Owned {
         LogUpgraded(upgradeTo, block.number);
         selfdestruct(upgradeTo);
     }
-}*/
+	
+	function cancelUpgrade() external onlyOwner {
+		require(scheduled);
+		
+		address old = upgradeTo;
+		
+		upgradeTo = address(0);
+		upgradeTimeBlocks = 0;
+		scheduled = false;
+		
+		LogUpgradeCancelled(old, blocks.number);
+	}
+}

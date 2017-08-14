@@ -5,7 +5,7 @@ import "./LedgerLib.sol";
 import "./MarketLib.sol";
 import "./OrderBookLib.sol";
 
-contract MarketStake is Owned{
+contract MarketStake is Upgradeable{
     
     address public clientLedger;
 	address public providerLedger;
@@ -18,7 +18,7 @@ contract MarketStake is Owned{
         address _register,
         address _orderBook
     )
-    Owned()
+    Upgradeable()
     {
         clientLedger = _clientLedger;
 		providerLedger = _providerLedger;
@@ -178,4 +178,19 @@ contract MarketStake is Owned{
         LedgerLib.withdraw(providerLedger);
         LogWithdrawProvider(msg.sender);
     }    
+	
+	function upgradeDuties() private {
+		Allowable(clientLedger).allow(upgradeTo);
+		Allowable(providerLedger).allow(upgradeTo);
+		Allowable(register).allow(upgradeTo);
+		Allowable(orderBook).allow(upgradeTo);
+		Allowable(clientLedger).disallow(this);
+		Allowable(providerLedger).disallow(this);
+		Allowable(register).disallow(this);
+		Allowable(orderBook).disallow(this);
+		Allowable(clientLedger).transferOwnership(upgradeTo);
+		Allowable(providerLedger).transferOwnership(upgradeTo);
+		Allowable(register).transferOwnership(upgradeTo);
+		Allowable(orderBook).transferOwnership(upgradeTo);
+	}
 }

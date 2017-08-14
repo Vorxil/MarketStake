@@ -4,11 +4,50 @@
     {
       "constant": true,
       "inputs": [],
+      "name": "upgradeTo",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
       "name": "owner",
       "outputs": [
         {
           "name": "",
           "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "upgradeTimeBlocks",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "scheduled",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
         }
       ],
       "payable": false,
@@ -42,7 +81,7 @@
           "type": "bytes32"
         },
         {
-          "name": "daysAhead",
+          "name": "blocksAhead",
           "type": "uint256"
         }
       ],
@@ -69,7 +108,7 @@
       "inputs": [
         {
           "indexed": false,
-          "name": "upgradeTo",
+          "name": "_upgradeTo",
           "type": "address"
         },
         {
@@ -134,5 +173,5 @@
   "unlinked_binary": "0x",
   "networks": {},
   "schema_version": "0.0.5",
-  "updated_at": 1501669931015
+  "updated_at": 1502708689406
 }
