@@ -28,8 +28,8 @@ contract Owned {
 
 contract Allowable is Owned {
 
-	struct OneIndexedBool {bool value; uint index;}
-	mapping(address => OneIndexedBool) public allowed;
+	struct IndexedBool {bool value; uint id;}
+	mapping(address => IndexedBool) public allowed;
 	address[] public index;
 	
 	modifier onlyAllowed() {
@@ -44,16 +44,16 @@ contract Allowable is Owned {
 		require(account != address(0));
 		require(!allowed[account].value);
 		index.push(account);
-		allowed[account] = OneIndexedBool(true, index.length);
+		allowed[account] = IndexedBool(true, index.length-1);
 		LogAllowed(account);
 	}
 	
 	function disallow(address account) external onlyOwner {
 		require(account != address(0));
 		require(allowed[account].value);
-		uint id = allowed[account].index;
-		index[id-1] = index[index.length-1];
-		allowed[index[id-1]].index = id;
+		uint id = allowed[account].id;
+		index[id] = index[index.length-1];
+		allowed[index[id]].id = id;
 		delete allowed[account];
 		index.length--;
 		LogDisallowed(account);
