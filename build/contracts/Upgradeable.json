@@ -15,6 +15,14 @@
       "type": "function"
     },
     {
+      "constant": false,
+      "inputs": [],
+      "name": "cancelUpgrade",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
       "constant": true,
       "inputs": [],
       "name": "owner",
@@ -157,6 +165,23 @@
       "inputs": [
         {
           "indexed": false,
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "time",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogUpgradeCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
           "name": "from",
           "type": "address"
         },
@@ -173,5 +198,5 @@
   "unlinked_binary": "0x",
   "networks": {},
   "schema_version": "0.0.5",
-  "updated_at": 1502708689406
+  "updated_at": 1502712116290
 }

@@ -117,6 +117,6 @@ contract Upgradeable is Owned {
 		upgradeTimeBlocks = 0;
 		scheduled = false;
 		
-		LogUpgradeCancelled(old, blocks.number);
+		LogUpgradeCancelled(old, block.number);
 	}
 }
