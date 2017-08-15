@@ -2,6 +2,9 @@ pragma solidity ^0.4.11;
 
 import "./Owned.sol";
 
+/**
+ * UUID - Database item hash ID contract
+ */
 contract UUID is Allowable {
     
     mapping(bytes32 => bool) public exists;

@@ -1,5 +1,8 @@
 pragma solidity ^0.4.11;
 
+/**
+ * Owned - ownership contract
+ */
 contract Owned {
 
     address public owner;
@@ -26,6 +29,9 @@ contract Owned {
 	
 }
 
+/**
+ * Allowable - Caller access contract
+ */
 contract Allowable is Owned {
 
 	struct IndexedBool {bool value; uint id;}
@@ -60,6 +66,9 @@ contract Allowable is Owned {
 	}
 }
 
+/**
+ * Upgradeable - Upgrade contract
+ */
 contract Upgradeable is Owned {
     
     address public upgradeTo = address(0);

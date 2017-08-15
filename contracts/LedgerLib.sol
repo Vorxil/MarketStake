@@ -2,6 +2,9 @@ pragma solidity ^0.4.11;
 
 import "./Ledger.sol";
 
+/**
+ * LedgerLib - Library interface to Ledger
+ */
 library LedgerLib {
     
     function deposit(address ledger, uint amount) public {

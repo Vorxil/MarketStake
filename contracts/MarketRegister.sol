@@ -2,6 +2,9 @@ pragma solidity ^0.4.11;
 
 import "./UUID.sol";
 
+/**
+ * MarketRegister - Non-metered market database contract
+ */
 contract MarketRegister is UUID {
     mapping(bytes32 => address) public provider;
     mapping(bytes32 => bool) public active;
@@ -65,6 +68,9 @@ contract MarketRegister is UUID {
         
 }
 
+/**
+ * ServiceRegister - Metered market database contract
+ */
 contract ServiceRegister is MarketRegister {
     mapping(bytes32 => uint) public tolerance;
 

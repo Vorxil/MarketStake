@@ -2,6 +2,9 @@ pragma solidity ^0.4.11;
 
 import "./MarketRegister.sol";
 
+/**
+ * MarketLib - library interface to MarketRegister et al.
+ */
 library MarketLib {
     
     modifier activeMarket(address register, bytes32 market) {

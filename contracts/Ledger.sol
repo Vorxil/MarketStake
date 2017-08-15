@@ -2,6 +2,9 @@ pragma solidity ^0.4.11;
 
 import "./Owned.sol";
 
+/**
+ * Ledger - overflow-safe ledger contract
+ */
 contract Ledger is Allowable {
     
     mapping(address => uint) public gains;

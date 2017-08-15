@@ -2,6 +2,9 @@ pragma solidity ^0.4.11;
 
 import "./UUID.sol";
 
+/**
+ * OrderBook - Non-metered order database contract
+ */
 contract OrderBook is UUID {
     struct uintTuple {
         uint client;
@@ -135,6 +138,9 @@ contract OrderBook is UUID {
     
 }
 
+/**
+ * ServiceOrderBook - Metered order database contract
+ */
 contract ServiceOrderBook is OrderBook {
     mapping(bytes32 => uint) public tolerance;
     

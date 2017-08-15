@@ -4,6 +4,9 @@ import "./Ledger.sol";
 import "./MarketRegister.sol";
 import "./OrderBook.sol";
 
+/**
+ * OrderBookLib - library interface to OrderBook et al.
+ */
 library OrderBookLib {
     
     modifier activeMarket(address register, bytes32 market) {
