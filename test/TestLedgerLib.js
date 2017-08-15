@@ -1,6 +1,6 @@
 var Ledger = artifacts.require("Ledger");
 var MarketStake = artifacts.require("MarketStake");
-var OrderBook = artifacts.require("ProductOrderBook");
+var OrderBook = artifacts.require("OrderBook");
 var Register = artifacts.require("MarketRegister");
 
 function assertUserEvent(result, event_id, fields, values, message) {

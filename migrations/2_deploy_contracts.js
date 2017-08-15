@@ -2,11 +2,6 @@ var LedgerLib = artifacts.require("LedgerLib");
 var MarketLib = artifacts.require("MarketLib");
 var OrderBookLib = artifacts.require("OrderBookLib");
 var MathLib = artifacts.require("MathLib");
-var Ledger = artifacts.require("Ledger");
-var ProductRegister = artifacts.require("MarketRegister");
-var ProductOrderBook = artifacts.require("ProductOrderBook");
-var ServiceRegister = artifacts.require("ServiceRegister");
-var ServiceOrderBook = artifacts.require("ServiceOrderBook");
 var MarketStake = artifacts.require("MarketStake");
 
 

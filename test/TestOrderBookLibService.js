@@ -104,7 +104,7 @@ contract("TestServiceOrderBook", function() {
 	var market_id;
 	var price = 10;
 	var stakeRate = 2;
-	var minStake = 25;
+	var minStake = 20;
 	var tolerance = 10;
 	
 	beforeEach(function() {
@@ -186,7 +186,7 @@ contract("TestServiceOrderBook", function() {
 		var id;
 		
 		function worker() {
-			return dapp.order(market, amount, {from: sender}).then(function(result) {
+			return dapp.order(market, amount, expectedStake, {from: sender}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market);
 				assertUserEvent(
 					result,
@@ -210,6 +210,9 @@ contract("TestServiceOrderBook", function() {
 				return book.price(id);
 			}).then(function(p) {
 				assert.equal(p, price, "Price should match");
+				return book.amount(id);
+			}).then(function(a) {
+				assert.equal(a, amount, "Amount should match")
 				return book.stake(id);
 			}).then(function(s) {
 				assert.equal(s, expectedStake, "Stake should match expected");
@@ -263,8 +266,8 @@ contract("TestServiceOrderBook", function() {
 	it("Should be able to make an order", function() {
 		var id;
 		var amount = 1000;
-		var expectedStake = amount*stakeRate;
-		var expectedFee = amount;
+		var expectedStake = price*amount*stakeRate;
+		var expectedFee = amount*price;
 		
 		return order(market_id, amount, client, expectedStake, expectedFee).then(function(_id) {
 			id = _id;
@@ -275,8 +278,8 @@ contract("TestServiceOrderBook", function() {
 	it("The provider should be able to make an order on its own market", function() {
 		var id;
 		var amount = 1000;
-		var expectedStake = amount*stakeRate;
-		var expectedFee = amount;
+		var expectedStake = price*amount*stakeRate;
+		var expectedFee = price*amount;
 		
 		return order(market_id, amount, provider, expectedStake, expectedFee).then(function(_id) {
 			id = _id;
@@ -286,20 +289,31 @@ contract("TestServiceOrderBook", function() {
 	
 	it("Should not make orders that can overflow stake", function() {
 		var id;
-		var amount = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-		var expectedStake = amount*stakeRate;
-		var expectedFee = amount;
+		var amount = "0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCD";
+		var expectedStake = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+		var expectedFee = amount*price;
 		
 		return order(market_id, amount, client, expectedStake, expectedFee).then(assert.fail).catch(function(error) {
 			assertInvalid(error, "Should be invalid opcode because overflow");
 		});
 	});
 	
+	it("Should be able to make a stake offer larger than the minimum", function() {
+		var id;
+		var amount = 1000;
+		var expectedStake = 3*price*amount*stakeRate;
+		var expectedFee = price*amount;
+		
+		return order(market_id, amount, client, expectedStake, expectedFee).then(function(_id) {
+			id = _id;
+		});
+	});
+	
 	it("Given funds have been deposited, client and provider should be able to confirm order", function() {
 		var id;
 		var amount = 1000;
-		var stake = amount*stakeRate;
-		var fee = amount;
+		var stake = price*amount*stakeRate;
+		var fee = amount*price;
 		var deposit = 3*stake;
 		
 		var init_client;
@@ -434,8 +448,8 @@ contract("TestServiceOrderBook", function() {
 	it("Given lack of funds, order should not be confirmable", function() {
 		var id;
 		var amount = 1000;
-		var stake = amount*stakeRate;
-		var fee = amount;
+		var stake = price*amount*stakeRate;
+		var fee = amount*price;
 		
 		function clientProvider() {
 			return clientLedger.pending(client).then(function(p) {
@@ -514,8 +528,8 @@ contract("TestServiceOrderBook", function() {
 	it("If order has not been confirmed, then the order should be cancellable without paying fee", function() {
 		var id;
 		var amount = 1000;
-		var stake = amount*stakeRate;
-		var fee = amount;
+		var stake = price*amount*stakeRate;
+		var fee = amount*price;
 		var deposit = 3*stake;
 		
 		return clientProvider().then(function() {
@@ -664,8 +678,8 @@ contract("TestServiceOrderBook", function() {
 		
 		var id;
 		var amount = 1000;
-		var stake = amount*stakeRate;
-		var fee = amount;
+		var stake = price*amount*stakeRate;
+		var fee = amount*price;
 		var cost;
 		var deposit = 3*stake;
 		var reading = 10;
@@ -721,7 +735,7 @@ contract("TestServiceOrderBook", function() {
 		
 		function clientProvider() {
 			return dep(client, provider, deposit).then(function() {
-				return dapp.order(market_id, amount, {from: client});
+				return dapp.order(market_id, amount, stake, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: client});
@@ -748,7 +762,7 @@ contract("TestServiceOrderBook", function() {
 			}).then(function() {
 				return dep(client, provider, deposit);
 			}).then(function() {
-				return dapp.order(market_id, amount, {from: client});
+				return dapp.order(market_id, amount, stake, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: client});
@@ -776,7 +790,7 @@ contract("TestServiceOrderBook", function() {
 		
 		function providerProvider() {
 			return dep(provider, provider, deposit).then(function() {
-				return dapp.order(market_id, amount, {from: provider});
+				return dapp.order(market_id, amount, stake, {from: provider});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: provider});
@@ -800,8 +814,8 @@ contract("TestServiceOrderBook", function() {
 		
 		var id;
 		var amount = 1000;
-		var stake = amount*stakeRate;
-		var fee = amount;
+		var stake = price*amount*stakeRate;
+		var fee = amount*price;
 		var deposit = 3*stake;
 		var reading = 10;
 		
@@ -829,7 +843,7 @@ contract("TestServiceOrderBook", function() {
 		
 		function setup(client, provider) {
 			return dep(client, provider, deposit).then(function() {
-				return dapp.order(market_id, amount, {from: client});
+				return dapp.order(market_id, amount, stake, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: client});
@@ -900,7 +914,7 @@ contract("TestServiceOrderBook", function() {
 		
 		function providerProvider() {
 			return dep(provider, provider, deposit).then(function() {
-				return dapp.order(market_id, amount, {from: provider});
+				return dapp.order(market_id, amount, stake, {from: provider});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: provider});
@@ -933,8 +947,8 @@ contract("TestServiceOrderBook", function() {
 		var market;
 		var id;
 		var amount = 1000;
-		var stake = amount*stakeRate;
-		var fee = amount;
+		var stake = price*amount*stakeRate;
+		var fee = amount*price;
 		var deposit = 3*stake;
 		var reading = 10;
 		
@@ -952,7 +966,7 @@ contract("TestServiceOrderBook", function() {
 			return createMarket().then(function() {
 				return dep(client, provider, deposit);
 			}).then(function() {
-				return dapp.order(market, amount, {from: client});
+				return dapp.order(market, amount, stake, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market);
 				return dapp.confirm(id, {from: client});
@@ -1063,7 +1077,7 @@ contract("TestServiceOrderBook", function() {
 			return createMarket().then(function() {
 				return dep(provider, provider, deposit);
 			}).then(function() {
-				return dapp.order(market, amount, {from: provider});
+				return dapp.order(market, amount, stake, {from: provider});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market);
 				return dapp.confirm(id, {from: provider});
@@ -1084,8 +1098,8 @@ contract("TestServiceOrderBook", function() {
 	it("If confirmed, the client and provider can agree to cancel bilaterally, waiving the fee", function() {
 		var id;
 		var amount = 1000;
-		var stake = amount*stakeRate;
-		var fee = amount;
+		var stake = price*amount*stakeRate;
+		var fee = amount*price;
 		var deposit = 3*stake;
 		var reading = 10;
 		
@@ -1095,7 +1109,7 @@ contract("TestServiceOrderBook", function() {
 		
 		function setup(client, provider) {
 			return dep(client, provider, deposit).then(function() {
-				return dapp.order(market_id, amount, {from: client});
+				return dapp.order(market_id, amount, stake, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: client});
@@ -1213,7 +1227,7 @@ contract("TestServiceOrderBook", function() {
 		function providerProvider() {
 			//No reading
 			return dep(provider, provider, deposit).then(function() {
-				return dapp.order(market_id, amount, {from: provider});
+				return dapp.order(market_id, amount, stake, {from: provider});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 				return dapp.confirm(id, {from: provider});
@@ -1234,8 +1248,8 @@ contract("TestServiceOrderBook", function() {
 	it("Third parties should have no control access to orders", function() {
 		var id;
 		var amount = 1000;
-		var stake = amount*stakeRate;
-		var fee = amount;
+		var stake = price*amount*stakeRate;
+		var fee = amount*price;
 		var deposit = 3*stake;
 		var reading = 10;
 		var cost = reading*price;
@@ -1246,7 +1260,7 @@ contract("TestServiceOrderBook", function() {
 		
 		function setup(client, provider) {
 			return dep(client, provider, deposit).then(function() {
-				return dapp.order(market_id, amount, {from: client});
+				return dapp.order(market_id, amount, stake, {from: client});
 			}).then(function(result) {
 				id = fetchOrderID(result, "LogNewOrder", market_id);
 			});

@@ -82,19 +82,20 @@ contract MarketStake is Upgradeable{
         LogMarketShutdown(id);
     }
     
-    function order(bytes32 id, uint amount) external {
+    function order(bytes32 id, uint amount, uint stakeOffer) external {
         bytes32 orderID = OrderBookLib.makeOrder(
             orderBook,
             register,
             id,
-            amount
+            amount,
+			stakeOffer
         );
         LogNewOrder(
             id,
             orderID,
             OrderBook(orderBook).price(orderID),
             amount,
-			OrderBook(orderBook).stake(orderID)
+			stakeOffer
         );
     }
     

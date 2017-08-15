@@ -26,7 +26,8 @@ library OrderBookLib {
         address orderBook,
         address register,
         bytes32 market,
-        uint amount
+        uint amount,
+		uint stakeOffer
     )
     public
     activeMarket(register, market)
@@ -36,9 +37,11 @@ library OrderBookLib {
         require(!OrderBook(orderBook).exists(id));
         
         uint price = MarketRegister(register).price(market);
-		if (!MarketRegister(register).isMetered()) {
-			require(price == 0 || amount <= uint(-1)/price);
-		}
+		uint rate = MarketRegister(register).stakeRate(market);
+		require(stakeOffer >= MarketRegister(register).minStake(market));
+		require(price == 0 || amount <= uint(-1)/price);
+		require(amount*price <= uint(-1)/rate);
+		require(stakeOffer >= amount*price*rate);
         
         createOrder(
             orderBook,
@@ -46,13 +49,11 @@ library OrderBookLib {
             market,
             msg.sender,
             price,
-            MarketRegister(register).stakeRate(market),
-            (MarketRegister(register).isMetered())?amount:amount*price
+            amount,
+			stakeOffer
         );
         
-        if (!MarketRegister(register).isMetered()) {
-            ProductOrderBook(orderBook).setCount(id, amount);
-        } else {
+        if (MarketRegister(register).isMetered()) {
             ServiceOrderBook(orderBook).setTolerance(
                 id,
                 ServiceRegister(register).tolerance(market)
@@ -338,18 +339,17 @@ library OrderBookLib {
         bytes32 market,
         address client,
         uint price,
-        uint stakeRate,
-        uint cost
+        uint amount,
+		uint stakeOffer
     )
     private
     {
-		require(cost <= uint(-1)/stakeRate);
         OrderBook(orderBook).setExists(id, true);
         OrderBook(orderBook).setMarket(id, market);
         OrderBook(orderBook).setClient(id, client);
         OrderBook(orderBook).setPrice(id, price);
-        OrderBook(orderBook).setStake(id, cost*stakeRate);
-        OrderBook(orderBook).setFee(id, cost);
+        OrderBook(orderBook).setStake(id, stakeOffer);
+        OrderBook(orderBook).setAmount(id, amount);
     }
 	
 	function fetchConfirm(address orderBook, bytes32 id)

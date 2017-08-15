@@ -1,6 +1,6 @@
 var Ledger = artifacts.require("Ledger");
 var MarketStake = artifacts.require("MarketStake");
-var ProductOrderBook = artifacts.require("ProductOrderBook");
+var OrderBook = artifacts.require("OrderBook");
 var ProductRegister = artifacts.require("MarketRegister");
 var ServiceOrderBook = artifacts.require("ServiceOrderBook");
 var ServiceRegister = artifacts.require("ServiceRegister");
@@ -70,7 +70,7 @@ contract("TestMarketStakeProductRegister", function(accounts) {
 			return ProductRegister.new();
 		}).then(function(instance) {
 			register = instance;
-			return ProductOrderBook.new();
+			return OrderBook.new();
 		}).then(function(instance) {
 			orderBook = instance;
 			return MarketStake.new(

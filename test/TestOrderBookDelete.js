@@ -31,6 +31,7 @@ contract("TestOrderBookDelete", function() {
 		var stake = 200;
 		var fee = 100;
 		var reading = 12;
+		var amount = 2;
 		
 		
 		return book.setExists(id, true).then(function() {
@@ -57,11 +58,11 @@ contract("TestOrderBookDelete", function() {
 			return book.stake(id);
 		}).then(function(s) {
 			assert.equal(s, stake, "Stake should be set");
-			return book.setFee(id, fee);
+			return book.setAmount(id, amount);;
 		}).then(function() {
-			return book.fee(id);
-		}).then(function(f) {
-			assert.equal(f, fee, "Fee should be set");
+			return book.amount(id);
+		}).then(function(a) {
+			assert.equal(a, amount, "Amount should be set");
 			return book.setActive(id, true);
 		}).then(function() {
 			return book.active(id);
@@ -116,9 +117,9 @@ contract("TestOrderBookDelete", function() {
 			return book.stake(id);
 		}).then(function(s) {
 			assert.equal(s, 0, "Stake should no longer be set");
-			return book.fee(id);
-		}).then(function(f) {
-			assert.equal(f, 0, "Fee should no longer be set");
+			return book.amount(id);
+		}).then(function(a) {
+			assert.equal(a, 0, "Amount should no longer be set");
 			return book.active(id);
 		}).then(function(a) {
 			assert.isFalse(a, "Should no longer be active");
