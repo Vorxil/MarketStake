@@ -2,10 +2,11 @@
 Proof of concept for an Ethereum contract for buying and selling products and services off-chain using stakes to incentivize cooperaton and reduce risk of fraud.
 
 ## Disclaimer
-Code is law. Use MarketStake at your own risk.
+Use MarketStake at your own risk.
 
 Read and understand source code before use.
 
+<<<<<<< HEAD
 More details found in LICENSE.
 
 ## Description
@@ -113,3 +114,6 @@ Thus the need for reputation still exists. But hopefully in a less significant m
 A third-party collusion attack is where the client colludes with a third party unknown to the provider. This third party would try to steal the product while in transit and the client would try to convince the provider that the product never arrived. The provider would then either send a new product or bilaterally cancel. The third party would afterwards hand over the stolen good to the client, leaving the client with the product without having to pay for it.
 
 An on-chain solution is unknown to me. The best way to mitigate is to ensure the transport is secure and preferrably on a secret delivery path/schedule.
+=======
+More details found in [LICENSE](./LICENSE).
+>>>>>>> origin/DecoupleRefactorization
