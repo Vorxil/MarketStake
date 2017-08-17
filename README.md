@@ -62,7 +62,7 @@ Read the [ABI](#abi) section for more details.
 
 ### UML
 
-[UML](./documents/MarketStakeUML.png)
+![UML](./documents/MarketStakeUML.png)
 
 Not listed are trivial getters and setters, events, and internal and private functions.
 
@@ -114,3 +114,399 @@ There appears to be a bug in TestRPC v4.0.1 where calling a payable function tha
 
 ## ABI
 
+### MarketStake is Upgradeable
+
+#### Data
+```
+address public clientLedger;
+address public providerLedger;
+address public register;
+address public orderBook;
+```
+
+#### Events
+```
+event LogNewMarket(bytes32 id);
+event LogMarketShutdown(bytes32 id);
+event LogMarketPriceChanged(bytes32 id, uint oldPrice, uint newPrice);
+event LogMarketMinStakeChanged(bytes32 id, uint oldMinimum, uint newMinimum);
+event LogMarketStakeRateChanged(bytes32 id, uint oldRate, uint newRate);
+event LogMarketToleranceChanged(bytes32 id, uint oldTolerance, uint newTolerance);
+event LogNewOrder(bytes32 marketID, bytes32 orderID, uint price, uint amount, uint stake);
+event LogOrderConfirmed(bytes32 orderID, address confirmer);
+event LogOrderActivated(bytes32 orderID);
+event LogOrderNewReading(bytes32 orderID, uint reading);
+event LogOrderFilled(bytes32 orderID, uint cost);
+event LogOrderCancelled(bytes32 orderID, address canceller);
+event LogOrderBilateralSought(bytes32 orderID, address seeker);
+event LogOrderBilateralCancel(bytes32 orderID);
+event LogDepositClient(address depositor, uint deposit);
+event LogWithdrawClient(address withdrawer);
+event LogDepositProvider(address depositor, uint deposit);
+event LogWithdrawProvider(address withdrawer);
+```
+
+#### Functions
+##### addMarket
+```
+function addMarket(
+  uint price,
+  uint minStake,
+  uint stakeRate,
+  uint tolerance
+)
+external
+returns (bytes32 id)
+```
+Add a market to the register
+
+@param price - price in Wei/[smallest measurable unit]
+
+@param minStake - smallest valid absolute stake
+
+@param stakeRate - smallest valid relative stake
+
+@param tolerance - greatest tolerable distance between two readings in [smallest measurable unit] (Non-metered goods are always exact)
+
+@return id - hash id of the new market
+
+Event: LogNewMarket(id)
+
+##### changePrice
+```
+function changePrice(bytes32 id, uint newPrice) external
+```
+Change the price on the market, does not affect created orders
+
+Provider only
+
+@param id - market hash id
+
+@param newPrice - the new price of the market goods.
+
+Event: LogMarketPriceChanged(id, oldPrice, newPrice)
+
+##### changeMinStake
+```
+function changeMinStake(bytes32 id, uint newMinimum) external
+```
+Change the minimum valid stake, does not affect created orders
+
+Provider only
+
+@param id - market hash id
+
+@param newMinimum - the new minimum valid stake of the market goods.
+
+Event: LogMarketMinStakeChanged(id, oldMinimum, newMinimum)
+
+##### changeStakeRate
+```
+function changeStakeRate(bytes32 id, uint newRate) external
+```
+Change the minimum relative valid stake, does not affect created orders
+
+Provider only
+
+@param id - market hash id
+
+@param newRate - the new minimum relative valid stake of the market goods.
+
+Event: LogMarketStakeRateChanged(id, oldRate, newRate)
+
+
+##### changeTolerance
+```
+function changeTolerance(bytes32 id, uint newTolerance) external
+```
+Change the tolerance, does not affect created orders
+
+Provider only
+
+@param id - market hash id
+
+@param newTolerance - the new tolerance
+
+Event: LogMarketToleranceChanged(id, oldTolerance, newTolerance)
+
+##### shutdownMarket
+```
+function shutdownMarket(bytes32 id) external
+```
+Permanently shutdown the market, breaching the contract for any active orders.
+
+Provider only
+
+@param id - market hash id
+
+Event: LogMarketShutdown(id)
+
+##### order
+```
+function order(bytes32 id, uint amount, uint stakeOffer) external returns (bytes32 orderID)
+```
+Create an order for a market good at current price. `stakeOffer` must satisfy market requirements.
+
+@param id - market hash id
+
+@param amount - number of [smallest measurable units] to order
+
+@param stakeOffer - stake that the sender is willing to offer in Wei
+
+@return orderID - order hash id
+
+Event: LogNewOrder(id, orderID, price, amount, stake)
+
+##### confirm
+```
+function confirm(bytes32 id) external
+```
+Sender confirms the existing order.
+
+Both the client and the provider needs to confirm to activate.
+
+Both client and provider needs to have enough deposited ether to stake to activate the order.
+
+Client and provider only
+
+Existing orders only
+
+@param id - order hash id
+
+Event: LogOrderConfirmed(id, confirmer)
+
+Event: LogOrderActivated(id)
+
+##### completeOrder
+```
+function completeOrder(bytes32 id, uint reading) external
+```
+Sender provides a reading to the order. If the client's and provider's readings match, the order is filled.
+
+Client and provider only
+
+Active orders only
+
+@param id - order hash id
+
+@param reading - reading in [smallest measurable unit]
+
+Event: LogOrderNewReading(id, reading)
+
+Event: LogOrderFilled(id, cost)
+
+##### cancelOrder
+```
+function cancelOrder(bytes32 id) external
+```
+Unilaterally cancel the order, breaching the contract. If the order is active, the contract breacher pays a fee equal to _amount_\*_price_.
+
+Client and provider only
+
+@param id - order hash id
+
+Event: LogOrderCancelled(id, canceller)
+
+##### bilateralCancelOrder
+```
+function bilateralCancelOrder(bytes32 id) external
+```
+Bilaterally cancel the order
+
+Both the client and the provider must agree to cancel the order
+
+No fee is paid
+
+Client and provider only
+
+Active orders only
+
+@param id - order hash id
+
+Event: LogOrderBilateralSought(id, seeker)
+
+Event: LogOrderBilateralCancel(id)
+
+##### depositClient
+```
+function depositClient() payable external
+```
+Deposit ether onto the client ledger
+Payable
+
+##### withdrawClient
+```
+function withdrawClient() external
+```
+Withdraw all pending ether from the client ledger
+
+##### depositProvider
+```
+function depositProvider() payable external
+```
+Deposit ether onto the provider ledger
+Payable
+
+##### withdrawProvider
+```
+function withdrawProvider() external
+```
+Withdraw all pending ether from the provider ledger
+
+
+### Ledger is Allowable
+
+#### Data
+```
+mapping(address => uint) public gains;
+mapping(address => uint) public locked;
+mapping(address => uint) public pending;
+```
+
+#### Functions
+
+##### balanceOf
+```
+function balanceOf(address account) constant public returns (uint)
+```
+Total deposited ether, both pending and locked.
+
+##### supplyOf
+```
+function supplyOf(address account) constant public returns (uint)
+```
+Total supply of surrounding the account, including pending, locked and gains.
+
+##### freeSpaceOf
+```
+function freeSpaceOf(address account) constant public returns (uint)
+```
+Total amount of free space left in ledger for account. (Likely to never be fully used up.)
+
+### MarketRegister is UUID
+
+#### Data
+
+```
+mapping(bytes32 => address) public provider;
+mapping(bytes32 => bool) public active;
+mapping(bytes32 => uint) public price;
+mapping(bytes32 => uint) public minStake;
+mapping(bytes32 => uint) public stakeRate;
+```
+
+### ServiceRegister is MarketRegister
+
+#### Data
+```
+mapping(bytes32 => uint) public tolerance;
+```
+
+### OrderBook is UUID
+
+#### Structs
+```
+struct uintTuple {
+  uint client;
+  uint provider;
+}
+struct boolTuple {
+  bool client;
+  bool provider;
+}
+```
+
+#### Data
+```
+mapping(bytes32 => bytes32) public markets;
+mapping(bytes32 => address) public clients;
+mapping(bytes32 => uint) public price;
+mapping(bytes32 => uint) public amount;
+mapping(bytes32 => uint) public stake;
+mapping(bytes32 => bool) public active;
+mapping(bytes32 => boolTuple) public confirmations;
+mapping(bytes32 => uintTuple) public readings;
+mapping(bytes32 => boolTuple) public givenReadings;
+mapping(bytes32 => boolTuple) public bilateral_cancel;
+```
+
+#### Functions
+
+##### Fee
+```
+function fee(bytes32 id)
+constant
+public
+returns (uint)
+```
+The full price of the order, equal to price \* amount.
+
+### ServiceOrderBook is OrderBook
+
+#### Data
+```
+mapping(bytes32 => uint) public tolerance;
+```
+
+### UUID is Allowable
+
+#### Data
+```
+mapping(bytes32 => bool) public exists;
+uint public nonce = 0;
+```
+
+#### Functions
+
+##### new_id
+```
+function new_id() 
+external
+onlyAllowed
+returns(bytes32)
+```
+
+##### deleteItem
+```
+function deleteItem(bytes32 id) external onlyAllowed mustExist(id)
+```
+
+### Upgradeable is Owned
+
+#### Data
+```
+address public upgradeTo = address(0);
+uint public upgradeTimeBlocks = 0;
+bool public scheduled = false;
+```
+
+#### Events
+```
+event LogUpgradeScheduled(
+    address _upgradeTo,
+    string sourceCodeAt,
+    string compileOpts,
+    bytes32 sha3Hash,
+    uint scheduledBlock
+);
+event LogUpgraded(address to, uint time);
+event LogUpgradeCancelled(address to, uint time);
+```
+
+#### Functions
+
+##### scheduleUpgrade
+```
+function scheduleUpgrade(
+    address _upgradeTo,
+    string sourceCodeAt,
+    string compileOpts,
+    bytes32 sha3Hash,
+    uint blocksAhead
+)
+external
+onlyOwner
+```
+Schedule an upgrade. The upgraded contracts needs to be already deployed in order for users to inspect it and its bytecode/source code.
+
+@param \_upgradeTo, 
