@@ -114,7 +114,7 @@ There appears to be a bug in TestRPC v4.0.1 where calling a payable function tha
 
 ## ABI
 
-### MarketStake is Upgradeable
+### MarketStake is [Upgradeable](#upgradeable-is-owned)
 
 #### Data
 ```
@@ -354,7 +354,7 @@ function withdrawProvider() external
 Withdraw all pending ether from the provider ledger
 
 
-### Ledger is Allowable
+### Ledger is [Allowable](#allowable-is-owned)
 
 #### Data
 ```
@@ -383,7 +383,7 @@ function freeSpaceOf(address account) constant public returns (uint)
 ```
 Total amount of free space left in ledger for account. (Likely to never be fully used up.)
 
-### MarketRegister is UUID
+### MarketRegister is [UUID](#uuid-is-allowable)
 
 #### Data
 
@@ -395,14 +395,14 @@ mapping(bytes32 => uint) public minStake;
 mapping(bytes32 => uint) public stakeRate;
 ```
 
-### ServiceRegister is MarketRegister
+### ServiceRegister is [MarketRegister](#marketregister-is-uuid)
 
 #### Data
 ```
 mapping(bytes32 => uint) public tolerance;
 ```
 
-### OrderBook is UUID
+### OrderBook is [UUID](#uuid-is-allowable)
 
 #### Structs
 ```
@@ -441,14 +441,14 @@ returns (uint)
 ```
 The full price of the order, equal to price \* amount.
 
-### ServiceOrderBook is OrderBook
+### ServiceOrderBook is [OrderBook](#orderbook-is-uuid)
 
 #### Data
 ```
 mapping(bytes32 => uint) public tolerance;
 ```
 
-### UUID is Allowable
+### UUID is [Allowable](#allowable-is-owned)
 
 #### Data
 ```
@@ -471,7 +471,7 @@ returns(bytes32)
 function deleteItem(bytes32 id) external onlyAllowed mustExist(id)
 ```
 
-### Upgradeable is Owned
+### Upgradeable is [Owned](#owned)
 
 #### Data
 ```
@@ -537,7 +537,7 @@ Cancel the upgrade.
 
 Event: LogUpgradeCancelled(old, block.number)
 
-### Allowable is Owned
+### Allowable is [Owned](#owned)
 
 #### Structs
 ```
