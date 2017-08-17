@@ -153,6 +153,7 @@ contract MarketStake is Upgradeable{
 	 * shutdownMarket - Permanently shutdown the market, breaching the contract for any active orders.
 	 * Provider only
 	 * @param id - market hash id
+	 * Event: LogMarketShutdown(id)
 	 */
     function shutdownMarket(bytes32 id) external {
         MarketLib.shutdownMarket(register, id);
