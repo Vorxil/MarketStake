@@ -84,7 +84,15 @@ contract MarketStake is Upgradeable{
 	 * @return id - hash id of the new market
 	 * Event: LogNewMarket(id)
 	 */
-	function addMarket(uint price, uint minStake, uint stakeRate, uint tolerance) external returns (bytes32 id){
+	function addMarket(
+		uint price,
+		uint minStake,
+		uint stakeRate,
+		uint tolerance
+	)
+	external
+	returns (bytes32 id)
+	{
         id = MarketLib.addMarket(register, price, minStake, stakeRate, tolerance);
         LogNewMarket(id);
     }

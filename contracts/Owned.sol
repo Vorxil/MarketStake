@@ -103,7 +103,13 @@ contract Upgradeable is Owned {
         upgradeTimeBlocks = block.number + blocksAhead;
         scheduled = true;
         
-        LogUpgradeScheduled(_upgradeTo, sourceCodeAt, compileOpts, sha3Hash, upgradeTimeBlocks);
+        LogUpgradeScheduled(
+			_upgradeTo,
+			sourceCodeAt,
+			compileOpts,
+			sha3Hash,
+			upgradeTimeBlocks
+		);
     }
     
     function upgradeDuties() private;
