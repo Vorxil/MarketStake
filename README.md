@@ -58,7 +58,7 @@ To cancel, the provider or client may unilaterally cancel by sending the `cancel
 
 The market register, order book and ledgers can be accessed at the addresses specified by the `register`, `orderBook`, `providerLedger` and `clientLedger` calls respectively.
 
-Read the [ABI](#ABI) section for more details.
+Read the [ABI](#abi) section for more details.
 
 ### UML
 
