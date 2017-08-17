@@ -30,7 +30,7 @@ Note that this does make bug patches slow to push.
 
 ### Requirements
 
-MarketStake uses [Truffle](http://truffleframework.com/) v for migrations and deployment.
+MarketStake uses [Truffle](http://truffleframework.com/) v3.4.6 for migrations and deployment.
 
 The program has been tested against [TestRPC](https://github.com/ethereumjs/testrpc) v4.0.1. To test it similarly, please install TestRPC.
 
