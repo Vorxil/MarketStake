@@ -1,0 +1,60 @@
+{
+  "contract_name": "MathLib",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "x",
+          "type": "uint256"
+        },
+        {
+          "name": "y",
+          "type": "uint256"
+        }
+      ],
+      "name": "average",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "x",
+          "type": "uint256"
+        },
+        {
+          "name": "y",
+          "type": "uint256"
+        }
+      ],
+      "name": "dist",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    }
+  ],
+  "unlinked_binary": "0x6060604052341561000f57600080fd5b5b60c98061001e6000396000f300606060405263ffffffff60e060020a6000350416632b7423ab8114602d5780636f8d998c14604b575b600080fd5b60396004356024356069565b60405190815260200160405180910390f35b60396004356024356080565b60405190815260200160405180910390f35b600280830490820401600183831616015b92915050565b6000818310156090578282036094565b8183035b90505b929150505600a165627a7a723058206f5b8499aaa228434a4adfd105374a04aedd3cb4dede899d6968beb32086500a0029",
+  "networks": {
+    "1502869769723": {
+      "events": {},
+      "links": {},
+      "address": "0x6a99cba570bc645a63a472a085ce4b1fd76c9697",
+      "updated_at": 1502886674997
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1502886674997
+}

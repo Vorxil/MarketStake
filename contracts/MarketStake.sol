@@ -1,612 +1,332 @@
 pragma solidity ^0.4.11;
 
-/***
- * Contract for selling discrete products and continuous services
- * using stakes to incentivize cooperation and minimize risk of fraud.
+import "./Owned.sol";
+import "./LedgerLib.sol";
+import "./MarketLib.sol";
+import "./OrderBookLib.sol";
+
+/**
+ * MarketStake - User Interface contract
+ * Users connect to the contract through here (e.g. via Geth or a Web3 UI).
+ * This contract holds the deposited funds, and the ledger keeps track of it.
+ * Providers create markets for their goods on the market register.
+ * Goods can be either metered or non-metered, though currently only one
+ * is supported per contract.
+ * Users create orders on goods and both the client and provider lock
+ * part of their deposited funds away as a stake to ensure cooperation.
  */
-contract MarketStake {
+contract MarketStake is Upgradeable{
     
-    struct Market {
-        address provider;
-        uint256 price;
-        uint256 minStake;
-        uint256 tolerance;
-        uint8 stakeRate;
-        bool active;
-        bool tagged;
-        bool exists;
-    }
+    address public clientLedger;
+	address public providerLedger;
+    address public register;
+    address public orderBook;
     
-    struct Session {
-        bytes32 market_id;
-        address client;
-        
-        uint256 stake;
-        uint256 cancellationFee;
-        
-        uint256 providerReading;
-        uint256 clientReading;
-        bool clientGiven;
-        bool providerGiven;
-        
-        bool clientBiCancel;
-        bool providerBiCancel;
-        
-        bool active;
-        bool exists;
-    }
-    
-    mapping(address => uint) public supply;//Total supply of wei involved by user
-    mapping(address => uint) public balances;//Total amount of wei deposited by user
-    mapping(address => uint) public pending; //Withdrawable wei
-    /* Details:
-     * pending := withdrawable wei
-     * balances := pending + stakes
-     * supply := balances + cancellation fee reservations
-     * Invariant: pending <= balances <= supply
-     */
-    
-    mapping(bytes32 => Market) public markets;
-    mapping(bytes32 => Session) public sessions;
-    
-    /* Markets are never deleted, only deactivated, as sessions depend on markets.
-     * Having sessions maintain a copy of the market would make market-wide
-     * decisions expensive to implement such as market transfers
-     * as each copy has to be updated separately.
-     */
-    
-    uint256 private session_nonce = 0;
-    uint256 private market_nonce = 0;
-    
-    event newMarket(bytes32 market_id);
-    event marketShutdown(bytes32 market_id);
-    event newMarketProvider(bytes32 market_id);
-    event newStake(bytes32 session_id);
-    event sessionStarted(bytes32 session_id);
-    event sessionEnded(bytes32 session_id, uint256 cost);
-    event sessionReading(bytes32 session_id, uint256 reading);
-    event sessionCancelled(bytes32 session_id);
-    
-    modifier marketExists(bytes32 market_id) {
-        require(markets[market_id].exists);
-        _;
-    }
-    modifier sessionExists(bytes32 session_id) {
-        require(sessions[session_id].exists);
-        _;
-    }
-    
-    modifier onlyProvider(bytes32 market_id) {
-        require(msg.sender == markets[market_id].provider);
-        _;
-    }
-    
-    modifier isActiveMarket(bytes32 market_id) {
-        require(markets[market_id].active);
-        _;
-    }
-    
-    modifier isActiveSession(bytes32 session_id) {
-        require(sessions[session_id].active);
-        _;
-    }
-    
-    /**
-     * Adds a market for discrete products or continuous services.
-     * @param price The price of the market item.
-     * Discrete product's price measured in Wei.
-     * Continuous service's price measured in Wei/[Smallest measurable unit].
-     * Price must be less than ((2^256)-1)/stakeRate wei.
-     * @param minStake The absolute minimum stake needed, in Wei.
-     * @param stakeRate The relative minimum stake needed, in Wei.
-     * Discrete product has minimum stake relative to price.
-     * Continuous service has minimum stake relative to 1.
-	 * Must be at least 2.
-     * @param tolerance The maximum distance in [smallest measurable unit]
-     * that two parties' readings can deviate from each other.
-     * Must be zero for discrete products.
-     * @param tagged True if discrete, False if continuous.
-     * @return market_id The hash id of the market, via @event newMarket.
-     */
-    function addMarket(
-        uint256 price,
-        uint256 minStake,
-        uint8 stakeRate,
-        uint256 tolerance,
-        bool tagged
-    ) 
-    external 
+    function MarketStake(
+        address _clientLedger,
+		address _providerLedger,
+        address _register,
+        address _orderBook
+    )
+    Upgradeable()
     {
-        require(invariant(msg.sender));
-        require(stakeRate > 1); //Incentive to force cooperation
-        require(!tagged || tolerance == 0); //Zero tolerance for discrete products
-        require(price <= uint256(-1)/stakeRate); //Overflow protection
-        
-        /* Generate market ID using the provider's address.
-         * Market nonce added to allow multiple markets per provider.
-         * Block number added so that provider doesn't get stuck in case
-         * of hash collision and thus doesn't have to wait for a new market;
-         * just wait for a new block i.e a few seconds.
-         */
-        bytes32 market_id = keccak256(msg.sender, block.number, market_nonce++);
-        
-        require(!markets[market_id].exists);
-        markets[market_id] = Market(
-            msg.sender,
-            price,
-            minStake,
-            tolerance,
-            stakeRate,
-            true,
-            tagged,
-            true
-        );
-        newMarket(market_id);
-        require(invariant(msg.sender));
-    }
-    
-    /**
-     * Shutsdown the market, permanently.
-     * Active sessions needs to be cancelled one by one.
-     * @param market_id The hash id of the market.
-     * @return market_id via @event marketShutdown.
-     */
-    function shutdownMarket(bytes32 market_id) 
-    marketExists(market_id) 
-    onlyProvider(market_id)
-	isActiveMarket(market_id)
-    external
-    {
-        require(invariant(msg.sender));
-        markets[market_id].active = false;
-        marketShutdown(market_id);
-        require(invariant(msg.sender));
-    }
-    
-    /**
-     * Transfers ownership and payment account of the market.
-     * @param market_id The hash id of the market.
-     * @param newProvider The new provider account.
-	 * Must have enough free space to hold all stakes and reservations.
-     * @return market_id via @event newMarketProvider.
-     */
-    function transferMarket(bytes32 market_id, address newProvider)
-    marketExists(market_id)
-    onlyProvider(market_id)
-    external
-    {
-        require(invariant(msg.sender));
-        require(invariant(newProvider));
-        
-        uint256 lockedStakesAndFees = supply[msg.sender] - pending[msg.sender];
-        uint256 lockedStakes = balances[msg.sender] - pending[msg.sender];
-        require(lockedStakesAndFees <= uint256(-1) - supply[newProvider]);//Overflow protection
-        
-        /* Details:
-         * The new provider must be able to accommodate the locked in stakes,
-         * as the stakes aren't refunded on transfers.
-         * Potential cancellation fees must also be accommodated.
-         */
-        
-        //Set new provider
-        markets[market_id].provider = newProvider;
-        
-        //Update pending
-        //No update needed
-        
-        //Update balances
-        //Transfer locked stakes
-        balances[newProvider] += lockedStakes;
-        balances[msg.sender] -= lockedStakes;
-        
-        //Update supply
-        //Transfer locked stakes and fee reservations
-        supply[newProvider] += lockedStakesAndFees;
-        supply[msg.sender] -= lockedStakesAndFees;
-        
-        newMarketProvider(market_id);
-        
-        require(invariant(msg.sender));
-        require(invariant(newProvider));
-    }
-    
-    /**
-     * Adds a new stake by the client on an existing market.
-	 * Caller must have enough free space to store the reservation.
-     * @param market_id The hash id of the market.
-     * @param stake How much the client is willing to stake from contract deposit.
-     * @return session_id The hash id of the session via @event newStake.
-     */
-    function addStake(bytes32 market_id, uint256 stake)
-    marketExists(market_id) 
-    isActiveMarket(market_id) 
-    external
-    {
-        require(invariant(msg.sender));
-        
-        /* Generate session ID using the client's address.
-         * Market nonce added to allow multiple sessions per cient.
-         * Block number added so that client doesn't get stuck in case
-         * of hash collision and thus doesn't have to wait for a new session;
-         * just wait for a new block i.e a few seconds.
-         */
-        bytes32 session_id = keccak256(msg.sender, block.number, session_nonce++);
-        
-        Market memory market = markets[market_id];
-        
-        require(!sessions[session_id].exists);
-        require(pending[msg.sender] >= stake);
-        require(stake >= market.minStake);
-        require(stake >= (market.tagged ? market.price : 1)*market.stakeRate);
-        
-        uint256 fee = (market.tagged ? market.price : stake/market.stakeRate);
-        
-        require(fee <= uint256(-1) - supply[msg.sender]); //Overflow protection
-        
-        //Update pending
-        //Lock stake
-        pending[msg.sender] -= stake;
-        
-        //Update balances
-        //Internal transfer, no update needed
-        
-        //Update supply
-        //Add fee reservation
-        supply[msg.sender] += fee;
-        
-        //Create session
-        sessions[session_id] = Session(
-            market_id, 
-            msg.sender, 
-            stake,
-            fee,
-            0, 
-            0, 
-            false,
-            false,
-            false,
-            false,
-            false,
-            true
-        );
-        newStake(session_id);
-        
-        require(invariant(msg.sender));
-    }
-    
-    /**
-     * Provider stakes an equivalent sum from provider's deposit
-     * and starts the session.
-	 * Provider must have enough free space to store reservation.
-     * @param session_id The hash id of the session.
-     * @return session_id via @event sessionStarted.
-     */
-    function counterStake(bytes32 session_id) external {
-        
-        require(invariant(msg.sender));
-        
-        Session memory session = sessions[session_id];
-        Market memory market = markets[session.market_id];
-        
-        require(market.provider == msg.sender);
-        require(market.exists);
-        require(market.active);
-        require(session.exists);
-        require(!session.active);
-        require(pending[market.provider] >= session.stake);
-        
-        require(session.cancellationFee <= uint256(-1) - supply[market.provider]); //Overflow protection
-        
-        //Update pending
-        //Lock stake
-        pending[market.provider] -= session.stake;
-        
-        //Update balances
-        //Internal transfer, no update needed
-        
-        //Update supply
-        //Add fee reservation
-        supply[market.provider] += session.cancellationFee;
-        
-        //Start session
-        sessions[session_id].active = true;
-        
-        sessionStarted(session_id);
-        
-        require(invariant(msg.sender));
-    }
-    
-    /**
-     * Parties of the session send in their readings to the session.
-     * If the readings are close enough to each other i.e. within maximum distance
-     * given by the market's tolerance, then the session ends, funds are
-     * transferred and stakes are returned.
-     * @param session_id The hash id of the session.
-     * @param reading The caller's reading. For discrete products, this is a token id.
-     * @return session_id via @events sessionReading and sessionEnded.
-     * @return reading via @event sessionReading.
-     * @return cost The final cost of the transaction, via @event sessionEnded.
-     */
-    function completeSession(bytes32 session_id, uint256 reading) external {
-        require(invariant(msg.sender));
-        
-        Session memory session = sessions[session_id];
-        Market memory market = markets[session.market_id];
-        
-        require(market.exists);
-        require(market.active);
-        require(session.exists);
-        require(session.active);
-        require(msg.sender == session.client || msg.sender == market.provider);
-        
-        if (msg.sender == session.client) {
-            (session.clientReading, sessions[session_id].clientReading) = (reading, reading);
-            if (!session.clientGiven) {
-                (session.clientGiven, sessions[session_id].clientGiven) = (true, true);
-            }
-            if (!checkReadings(session_id, session, market)) {
-                sessionReading(session_id, reading);
-            }
-        } 
-        
-        if (msg.sender == market.provider) {
-            (session.providerReading, sessions[session_id].providerReading) = (reading, reading);
-            if (!session.providerGiven) {
-                (session.providerGiven, sessions[session_id].providerGiven) = (true, true);
-            }
-            if (!checkReadings(session_id, session, market)) {
-                sessionReading(session_id, reading);
-            }
-        }
-        require(invariant(msg.sender));
-    }
-    
-    /**
-     * Unilaterally cancel the session. If the stake hasn't been countered, 
-     * the stake is returned in full. Else, the caller pays the full price,
-     * unless the provider has shutdown the market. In that case, the
-     * provider pays the full price.
-     * @param session_id The hash of the session.
-     * @return session_id via @event sessionCancelled.
-     */
-    function cancel(bytes32 session_id) external {
-        
-        Session memory session = sessions[session_id];
-        Market memory market = markets[session.market_id];
-        
-        require(invariant(session.client));
-        require(invariant(market.provider));
-        
-        require(session.exists);
-        require(market.exists);
-        require(session.client == msg.sender || market.provider == msg.sender);
-        
-        if (!session.active) {
-            //No counter stake, just take money back
-            
-            //Update pending
-            //Return stake
-            pending[session.client] += session.stake;
-            
-            //Update balacnes
-            //Internal transfer, no update needed
-            
-            //Update supply
-            //Remove fee reservation
-            supply[session.client] -= session.cancellationFee;
-            
-            //Delete session
-            delete sessions[session_id];
-            sessionCancelled(session_id);
-            
-            require(invariant(session.client));
-            require(invariant(market.provider));
-            return;
-        } 
-        
-        if (!market.active) {
-            //Effective breach of contract by provider
-            
-            //Update pending
-            //Return stakes and transfer fees
-            pending[session.client] += session.stake + session.cancellationFee; 
-            pending[market.provider] += session.stake - session.cancellationFee;
-            
-            //Update balances
-            //Transfer fees
-            balances[session.client] += session.cancellationFee;
-            balances[market.provider] -= session.cancellationFee;
-            
-            //Update supply
-            //Remove fee reservation and transfer the fees
-            supply[market.provider] -= 2*session.cancellationFee;
-            //Client's cancels out
-            
-            delete sessions[session_id];
-            sessionCancelled(session_id);
-        } else {
-            //Breach of contract by caller, caller pays fee equal to full price.
-            address callee = (msg.sender == market.provider) ? session.client : market.provider;
-            
-            //Update pending
-            //Return stakes and transfer fees
-            pending[msg.sender] += session.stake - session.cancellationFee;
-            pending[callee] += session.stake + session.cancellationFee;
-            
-            //Update balances
-            //Transfer fees
-            balances[msg.sender] -= session.cancellationFee;
-            balances[callee] += session.cancellationFee;
-            
-            //Update supply
-            //Remove fee reservation and transfer the fees
-            supply[msg.sender] -= 2*session.cancellationFee;
-            //Callee's cancels out
-            
-            delete sessions[session_id];
-            sessionCancelled(session_id);
-        }
-        
-        require(invariant(session.client));
-        require(invariant(market.provider));
-    }
-    
-    
-    /**
-     * Bilaterally cancel the session. If both parties agree to cancel,
-     * the stakes are returned in full.
-     * @param session_id The hash ID of the session
-     * @return session_id via @event sessionCancelled
-     */
-    function bilateralCancel(bytes32 session_id) external {
-        
-        Session memory session = sessions[session_id];
-        Market memory market = markets[session_id];
-        
-        require(invariant(session.client));
-        require(invariant(market.provider));
-        
-        require(session.exists);
-        require(market.exists);
-        require(session.client == msg.sender || market.provider == msg.sender);
-        require(market.active);
-        require(session.active);
-        
-        if (msg.sender == session.client && !session.clientBiCancel) {
-            (session.clientBiCancel, sessions[session_id].clientBiCancel) = (true, true);
-        }
-        
-        if (msg.sender == market.provider && !session.providerBiCancel) {
-            (session.providerBiCancel, sessions[session_id].providerBiCancel) = (true, true);
-        }
-        
-        if (session.clientBiCancel && session.providerBiCancel) {
-            //Update pending
-            //Return stakes
-            pending[session.client] += session.stake;
-            pending[market.provider] += session.stake;
-            
-            //Update balances
-            //Internal transfer, no update needed
-            
-            //Update supply
-            //Remove fee reservations
-            supply[session.client] -= session.cancellationFee;
-            supply[market.provider] -= session.cancellationFee;
-            delete sessions[session_id];
-            sessionCancelled(session_id);
-        }
-        
-        require(invariant(session.client));
-        require(invariant(market.provider));
-    }
-    
-    /**
-     * Deposit a sum of Ether onto the contract.
-	 * Caller must have enough free space.
-     * Payable
-     */
-    function deposit() payable external {
-        
-        require(invariant(msg.sender));
-        require(msg.value <= uint256(-1) - supply[msg.sender]);
-        
-        pending[msg.sender] += msg.value;
-        balances[msg.sender] += msg.value;
-        supply[msg.sender] += msg.value;
-        
-        require(invariant(msg.sender));
-    }
-    
-    /**
-     * Withdraw deposit.
-     * @return bool True if no error, throws otherwise.
-     */
-    function withdraw() external returns(bool){
-        
-        require(invariant(msg.sender));
-        uint amount = pending[msg.sender];
-        if (amount > 0) {
-            pending[msg.sender] = 0;
-            balances[msg.sender] -= amount;
-            supply[msg.sender] -= amount;
-            msg.sender.transfer(amount);
-        }  
-        require(invariant(msg.sender));
-		return true;
-    }
-    
-    /**
-     * Checks the readings given the parties of the session and transfer funds.
-     * Private helper function
-     * @param session_id The hash id of the session.
-     * @param session A memory pointer to the session.
-     * @param market A memory pointer to the market.
-     * @return bool True if session was completed, false if not.
-     * @return session_id via @event sessionEnded.
-     * @return cost The final cost of the transaction, via @event sessionEnded.
-     */
-    function checkReadings(bytes32 session_id, Session memory session, Market memory market) private returns(bool) {
-        if (session.clientGiven && session.providerGiven && 
-            ((session.clientReading >= session.providerReading && 
-            session.clientReading - session.providerReading <= market.tolerance) || 
-            (session.clientReading < session.providerReading && 
-            session.providerReading - session.clientReading <= market.tolerance))) {
-            
-            uint256 cost;
-            
-            if (!market.tagged) {
-                uint256 avgReading = session.clientReading/2 + session.providerReading/2 + 
-                                    ((session.clientReading & 1) & (session.providerReading & 1));
-                
-                cost = avgReading*market.price;
-                uint256 correspondingStake = market.stakeRate*cost;
-                
-                //Check for overflows
-                if ((avgReading > 0 && market.price != cost/avgReading) || 
-                    (cost != correspondingStake/market.stakeRate) ||
-                    (correspondingStake > session.stake)) //If overflowed, then correspondingStake > session.stake
-                {
-                    cost = session.stake/market.stakeRate;
-                }
-            } else {
-                cost = market.price;
-            }
-            
-            //Update pending
-            //Return stakes and transfer cost
-            pending[market.provider] += session.stake + cost;
-            pending[session.client] += session.stake - cost;
-            
-            //Update balances
-            //Transfer cost
-            balances[market.provider] += cost;
-            balances[session.client] -= cost;
-            
-            //Update supply
-            //Remove fee reservations and transfer cost
-            supply[market.provider] -= session.cancellationFee - cost; //fee >= cost
-            supply[session.client] -= session.cancellationFee + cost;
-                
-            //Finish and delete session
-            delete sessions[session_id];
-            
-            sessionEnded(session_id, cost);
-            return true;
-        }
-        return false;
+		require(
+			MarketRegister(_register).isMetered() == 
+			OrderBook(_orderBook).isMetered()
+		);
+        clientLedger = _clientLedger;
+		providerLedger = _providerLedger;
+        register = _register;
+        orderBook = _orderBook;
     }
     
 	/**
-	 * Invariant function
+	 * Market events
 	 */
-    function invariant(address toCheck) private constant returns (bool) {
-        return (pending[toCheck] <= balances[toCheck] && balances[toCheck] <= supply[toCheck]);
+	 
+    event LogNewMarket(bytes32 id);
+    event LogMarketShutdown(bytes32 id);
+    
+    event LogMarketPriceChanged(bytes32 id, uint oldPrice, uint newPrice);
+    event LogMarketMinStakeChanged(bytes32 id, uint oldMinimum, uint newMinimum);
+    event LogMarketStakeRateChanged(bytes32 id, uint oldRate, uint newRate);
+	event LogMarketToleranceChanged(bytes32 id, uint oldTolerance, uint newTolerance);
+    
+	/**
+	 * Order events
+	 */
+	
+    event LogNewOrder(bytes32 marketID, bytes32 orderID, uint price, uint amount, uint stake);
+    event LogOrderConfirmed(bytes32 orderID, address confirmer);
+    event LogOrderActivated(bytes32 orderID);
+    event LogOrderNewReading(bytes32 orderID, uint reading);
+    event LogOrderFilled(bytes32 orderID, uint cost);
+    event LogOrderCancelled(bytes32 orderID, address canceller);
+    event LogOrderBilateralSought(bytes32 orderID, address seeker);
+    event LogOrderBilateralCancel(bytes32 orderID);
+    
+	/**
+	 * Ledger events
+	 */
+	
+    event LogDepositClient(address depositor, uint deposit);
+    event LogWithdrawClient(address withdrawer);
+	event LogDepositProvider(address depositor, uint deposit);
+    event LogWithdrawProvider(address withdrawer);
+	
+	/**
+	 * addMarket - add a market to the register
+	 * @param price - price in Wei/[smallest measurable unit]
+	 * @param minStake - smallest valid absolute stake
+	 * @param stakeRate - smallest valid relative stake
+	 * @param tolerance - greatest tolerable distance between two readings in [smallest measurable unit] 
+	 * 		(Non-metered goods are always exact)
+	 * @return id - hash id of the new market
+	 * Event: LogNewMarket(id)
+	 */
+	function addMarket(
+		uint price,
+		uint minStake,
+		uint stakeRate,
+		uint tolerance
+	)
+	external
+	returns (bytes32 id)
+	{
+        id = MarketLib.addMarket(register, price, minStake, stakeRate, tolerance);
+        LogNewMarket(id);
+    }
+    
+	/**
+	 * changePrice - change the price on the market, does not affect created orders
+	 * Provider only
+	 * @param id - market hash id
+	 * @param newPrice - the new price of the market goods.
+	 * Event: LogMarketPriceChanged(id, oldPrice, newPrice)
+	 */
+    function changePrice(bytes32 id, uint newPrice) external {
+		uint oldPrice = MarketRegister(register).price(id);
+        MarketLib.changePrice(register, id, newPrice);
+        LogMarketPriceChanged(id, oldPrice, newPrice);
+	}
+    
+	/**
+	 * changeMinStake - change the minimum valid stake, does not affect created orders
+	 * Provider only
+	 * @param id - market hash id
+	 * @param newMinimum - the new minimum valid stake of the market goods.
+	 * Event: LogMarketMinStakeChanged(id, oldMinimum, newMinimum)
+	 */
+    function changeMinStake(bytes32 id, uint newMinimum) external {
+        uint oldMinimum = MarketRegister(register).minStake(id);
+        MarketLib.changeMinStake(register, id, newMinimum);
+        LogMarketMinStakeChanged(id, oldMinimum, newMinimum);
+    }
+    
+	/**
+	 * changeStakeRate - change the minimum relative valid stake, does not affect created orders
+	 * Provider only
+	 * @param id - market hash id
+	 * @param newRate - the new minimum relative valid stake of the market goods.
+	 * Event: LogMarketStakeRateChanged(id, oldRate, newRate)
+	 */
+    function changeStakeRate(bytes32 id, uint newRate) external {
+        uint oldRate = MarketRegister(register).stakeRate(id);
+        MarketLib.changeStakeRate(register, id, newRate);
+        LogMarketStakeRateChanged(id, oldRate, newRate);
     }
 	
 	/**
-	 * Fallback function
-	 * Throws to prevent accidental calls and deposits.
+	 * changeTolerance - change the tolerance, does not affect created orders
+	 * Provider only
+	 * @param id - market hash id
+	 * @param newTolerance - the new tolerance
+	 * Event: LogMarketToleranceChanged(id, oldTolerance, newTolerance)
 	 */
-	function() { revert(); }
+	function changeTolerance(bytes32 id, uint newTolerance) external {
+        uint oldTolerance = ServiceRegister(register).tolerance(id);
+        MarketLib.changeTolerance(register, id, newTolerance);
+        LogMarketToleranceChanged(id, oldTolerance, newTolerance);
+    }
+    
+	/**
+	 * shutdownMarket - Permanently shutdown the market, breaching the contract for any active orders.
+	 * Provider only
+	 * @param id - market hash id
+	 */
+    function shutdownMarket(bytes32 id) external {
+        MarketLib.shutdownMarket(register, id);
+        LogMarketShutdown(id);
+    }
+    
+	/**
+	 * order - create an order for a market good at current price
+	 * @param id - market hash id
+	 * @param amount - number of [smallest measurable units] to order
+	 * @param stakeOffer - stake that the sender is willing to offer in Wei
+	 * @return orderID - order hash id
+	 * Event: LogNewOrder(id, orderID, price, amount, stake)
+	 */
+    function order(bytes32 id, uint amount, uint stakeOffer) external returns (bytes32 orderID) {
+        orderID = OrderBookLib.makeOrder(
+            orderBook,
+            register,
+            id,
+            amount,
+			stakeOffer
+        );
+        LogNewOrder(
+            id,
+            orderID,
+            OrderBook(orderBook).price(orderID),
+            amount,
+			stakeOffer
+        );
+    }
+    
+	/**
+	 * confirm - sender confirms the existing order
+	 * 		Both the client and the provider needs to confirm to activate
+	 * Client and provider only
+	 * Existing orders only
+	 * @param id - order hash id
+	 * Event: LogOrderConfirmed(id, confirmer)
+	 * Event: LogOrderActivated(id)
+	 */
+    function confirm(bytes32 id) external {
+        bool success = OrderBookLib.confirmOrder(
+			orderBook,
+			register,
+			clientLedger,
+			providerLedger,
+			id
+		);
+        LogOrderConfirmed(id, msg.sender);
+        if (success) {
+            LogOrderActivated(id);
+        }
+    }
+    
+	/**
+	 * completeOrder - sender provides a reading to the order.
+	 *		If the client's and provider's readings match, the order is filled
+	 * Client and provider only
+	 * Active orders only
+	 * @param id - order hash id
+	 * @param reading - reading in [smallest measurable unit]
+	 * Event: LogOrderNewReading(id, reading)
+	 * Event: LogOrderFilled(id, cost)
+	 */
+    function completeOrder(bytes32 id, uint reading) external {
+        uint cost;
+        bool success;
+        (cost, success) = OrderBookLib.completeOrder(
+            orderBook,
+            register,
+            clientLedger,
+			providerLedger,
+            id,
+            reading
+        );
+        LogOrderNewReading(id, reading);
+        if (success) {
+            LogOrderFilled(id, cost);
+        }
+    }
+    
+	/**
+	 * cancelOrder - unilaterally cancel the order, breaching the contract
+	 *		If the order is active, the contract breacher pays a fee equal to amount*price
+	 * Client and provider only
+	 * @param id - order hash id
+	 * Event: LogOrderCancelled(id, canceller)
+	 */
+    function cancelOrder(bytes32 id) external {
+		bytes32 market = OrderBook(orderBook).markets(id);
+        OrderBookLib.cancelOrder(
+			orderBook,
+			register,
+			clientLedger,
+			providerLedger,
+			id
+		);        
+        LogOrderCancelled(
+            id, 
+            (MarketRegister(register).active(market)) ? msg.sender :
+			MarketRegister(register).provider(market)
+        );
+    }
+    
+	/**
+	 * bilateralCancelOrder - bilaterally cancel the order
+	 * 		Both the client and the provider must agree to cancel the order
+	 *		No fee is paid
+	 * Client and provider only
+	 * Active orders only
+	 * @param id - order hash id
+	 * Event: LogOrderBilateralSought(id, seeker)
+	 * Event: LogOrderBilateralCancel(id)
+	 */
+    function bilateralCancelOrder(bytes32 id) external {
+        bool success = OrderBookLib.bilateralCancel(
+			orderBook,
+			register,
+			clientLedger,
+			providerLedger,
+			id
+		);
+        LogOrderBilateralSought(id, msg.sender);
+        if (success) {
+            LogOrderBilateralCancel(id);
+        }
+    }
+    
+	/**
+	 * Deposit ether onto the client ledger
+	 * Payable
+	 */
+    function depositClient() payable external {
+        LedgerLib.deposit(clientLedger, msg.value);
+        LogDepositClient(msg.sender, msg.value);
+    }
+    
+	/**
+	 * Withdraw all pending ether from the client ledger
+	 */
+    function withdrawClient() external {
+        LedgerLib.withdraw(clientLedger);
+        LogWithdrawClient(msg.sender);
+    }    
+	
+	/**
+	 * Deposit ether onto the provider ledger
+	 * Payable
+	 */
+	function depositProvider() payable external {
+        LedgerLib.deposit(providerLedger, msg.value);
+        LogDepositProvider(msg.sender, msg.value);
+    }
+    
+	/**
+	 * Withdraw all pending ether from the provider ledger
+	 */
+    function withdrawProvider() external {
+        LedgerLib.withdraw(providerLedger);
+        LogWithdrawProvider(msg.sender);
+    }    
+	
+	function upgradeDuties() private {
+		Allowable(clientLedger).allow(upgradeTo);
+		Allowable(providerLedger).allow(upgradeTo);
+		Allowable(register).allow(upgradeTo);
+		Allowable(orderBook).allow(upgradeTo);
+		Allowable(clientLedger).disallow(this);
+		Allowable(providerLedger).disallow(this);
+		Allowable(register).disallow(this);
+		Allowable(orderBook).disallow(this);
+		Allowable(clientLedger).transferOwnership(upgradeTo);
+		Allowable(providerLedger).transferOwnership(upgradeTo);
+		Allowable(register).transferOwnership(upgradeTo);
+		Allowable(orderBook).transferOwnership(upgradeTo);
+	}
 }

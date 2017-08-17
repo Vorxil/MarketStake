@@ -1,0 +1,202 @@
+{
+  "contract_name": "Upgradeable",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "upgradeTo",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "cancelUpgrade",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "upgradeTimeBlocks",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "scheduled",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "upgrade",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_upgradeTo",
+          "type": "address"
+        },
+        {
+          "name": "sourceCodeAt",
+          "type": "string"
+        },
+        {
+          "name": "compileOpts",
+          "type": "string"
+        },
+        {
+          "name": "sha3Hash",
+          "type": "bytes32"
+        },
+        {
+          "name": "blocksAhead",
+          "type": "uint256"
+        }
+      ],
+      "name": "scheduleUpgrade",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "new_owner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_upgradeTo",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "sourceCodeAt",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "name": "compileOpts",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "name": "sha3Hash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "scheduledBlock",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogUpgradeScheduled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "time",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogUpgraded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "time",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogUpgradeCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "LogTransferedOwnership",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1502886655317
+}
