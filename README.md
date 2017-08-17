@@ -164,7 +164,7 @@ Add a market to the register
 
 @param minStake - smallest valid absolute stake
 
-@param stakeRate - smallest valid relative stake
+@param stakeRate - smallest valid relative stake, must be at least 2
 
 @param tolerance - greatest tolerable distance between two readings in [smallest measurable unit] (Non-metered goods are always exact)
 
