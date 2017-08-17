@@ -509,4 +509,90 @@ onlyOwner
 ```
 Schedule an upgrade. The upgraded contracts needs to be already deployed in order for users to inspect it and its bytecode/source code.
 
-@param \_upgradeTo, 
+@param \_upgradeTo - the address of the contract to which the current contract will upgrade
+
+@param sourceCodeAt - directions to the source code e.g. an URL.
+
+@param compileOpts - the compiler options used for the new contract, including version.
+
+@param sha3Hash - sha3 hash or some other 32-byte hash of the source code.
+
+@params blocksAhead - how many blocks ahead to schedule the upgrade, minimum being 2 weeks at 5-second block time.
+
+Event: LogUpgradeScheduled(\_upgradeTo, sourceCodeAt, compileOpts, sha3Hash, upgradeTimeBlocks);
+
+##### upgrade
+```
+function upgrade() external onlyOwner
+```
+Perform the upgrade. Old contract selfdestructs.
+
+Event: LogUpgraded(upgradeTo, block.number)
+
+##### cancelUpgrade
+```
+function cancelUpgrade() external onlyOwner
+```
+Cancel the upgrade.
+
+Event: LogUpgradeCancelled(old, block.number)
+
+### Allowable is Owned
+
+#### Structs
+```
+struct IndexedBool {bool value; uint id;}
+```
+
+#### Data
+```
+mapping(address => IndexedBool) public allowed;
+address[] public index;
+```
+
+#### Events
+```
+event LogAllowed(address account);
+event LogDisallowed(address account);
+```
+
+#### Functions
+
+##### allow
+```
+function allow(address account) external onlyOwner 
+```
+Allow the account to use `onlyAllowed` functions.
+
+Event: LogAllowed(account)
+
+##### disallow
+```
+function disallow(address account) external onlyOwner
+```
+Disallow the account to use `onlyAllowed` functions. Accounts are disallowed by default.
+
+Event: LogDisallowed(account)
+
+
+### Owned
+
+#### Data
+```
+address public owner;
+```
+
+#### Events
+```
+event LogTransferedOwnership(address from, address to);
+```
+
+#### Functions
+
+##### transferOwnership
+```
+function transferOwnership(address new_owner) external onlyOwner
+```
+Transfer the ownership of the contract.
+
+Event: LogTransferedOwnership(msg.sender, new_owner)
